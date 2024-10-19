@@ -5,12 +5,15 @@ import { formView } from "@web/views/form/form_view";
 import { patch } from "@web/core/utils/patch";
 import { useEffect } from "@odoo/owl";
 
-patch(FormController.prototype, 'ChatterRefreshFormController', {
+patch(FormController.prototype, {
     setup() {
         this._super(...arguments);
         
         useEffect(() => {
-            this.el.addEventListener('click', this.onSendButtonClick.bind(this));
+            const chatter = this.el.querySelector('.o_Chatter');
+            if (chatter) {
+                chatter.addEventListener('click', this.onSendButtonClick.bind(this));
+            }
         });
     },
 
@@ -19,9 +22,12 @@ patch(FormController.prototype, 'ChatterRefreshFormController', {
             // Wait for the message to be sent
             setTimeout(() => {
                 this.model.root.load();
-                const chatter = this.model.root.chatter;
-                if (chatter && chatter.refresh) {
-                    chatter.refresh();
+                const chatter = this.el.querySelector('.o_Chatter');
+                if (chatter) {
+                    const messageList = chatter.querySelector('.o_Chatter_scrollPanel');
+                    if (messageList) {
+                        messageList.scrollTop = messageList.scrollHeight;
+                    }
                 }
             }, 500);
         }
@@ -29,6 +35,6 @@ patch(FormController.prototype, 'ChatterRefreshFormController', {
 });
 
 // Patch the form view to use our extended FormController
-patch(formView, 'ChatterRefreshFormView', {
+patch(formView, {
     Controller: FormController,
 });
