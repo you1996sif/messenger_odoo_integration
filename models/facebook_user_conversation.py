@@ -66,16 +66,39 @@ class FacebookUserConversation(models.Model):
         
     #     return message
     def message_post(self, **kwargs):
-        # Check if the message is coming from the Facebook conversation view
+        _logger.info(f"message_post called with context: {self.env.context}")
         if self.env.context.get('facebook_message'):
             return self.send_facebook_message(kwargs.get('body'))
         return super(FacebookUserConversation, self).message_post(**kwargs)
 
+    # def send_facebook_message(self, message):
+    #     controller = FacebookWebhookController()
+    #     clean_message = controller.strip_html(message)
+    #     if clean_message:
+    #         sent = controller.send_facebook_message(self.partner_id.id, clean_message, env=self.env)
+    #         if sent:
+    #             self.env['facebook_conversation'].sudo().create({
+    #                 'user_conversation_id': self.id,
+    #                 'partner_id': self.partner_id.id,
+    #                 'message': clean_message,
+    #                 'sender': 'odoo',
+    #                 'odoo_user_id': self.env.user.id,
+    #                 'message_type': 'comment',
+    #             })
+    #             self.write({'last_message_date': fields.Datetime.now()})
+    #             return True
+    #         else:
+    #             raise UserError(_("Failed to send message to Facebook."))
+    #     return False
     def send_facebook_message(self, message):
-        controller = FacebookWebhookController()
+        self.ensure_one()
+        _logger.info(f"Attempting to send Facebook message: {message}")
+        controller = self.env['facebook.webhook.controller'].sudo()
         clean_message = controller.strip_html(message)
         if clean_message:
+            _logger.info(f"Cleaned message: {clean_message}")
             sent = controller.send_facebook_message(self.partner_id.id, clean_message, env=self.env)
+            _logger.info(f"Message sent status: {sent}")
             if sent:
                 self.env['facebook_conversation'].sudo().create({
                     'user_conversation_id': self.id,
@@ -88,7 +111,11 @@ class FacebookUserConversation(models.Model):
                 self.write({'last_message_date': fields.Datetime.now()})
                 return True
             else:
-                raise UserError(_("Failed to send message to Facebook."))
+                error_msg = _("Failed to send message to Facebook.")
+                _logger.error(error_msg)
+                raise UserError(error_msg)
+        else:
+            _logger.warning("Attempted to send empty message")
         return False
     
     def add_message_to_chatter(self, message_text, sender, message_id=False):
@@ -103,7 +130,7 @@ class FacebookUserConversation(models.Model):
         })
         self.write({'last_message_date': fields.Datetime.now()})
         
-        
+    
     # def add_message_to_chatter(self, message_text, sender, message_id=False):
     #     self.with_context(from_facebook=True).message_post(
     #         body=message_text,

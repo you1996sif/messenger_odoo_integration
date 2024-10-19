@@ -80,6 +80,36 @@ class FacebookWebhookController(http.Controller):
     @staticmethod
     def strip_html(text):
         return re.sub('<[^<]+?>', '', text)
+    
+    
+    @staticmethod
+    def send_facebook_message(partner_id, message, env=None):
+        if env is None:
+            env = request.env
+        
+        _logger.info(f"Attempting to send message to partner {partner_id}: {message}")
+        partner = env['res.partner'].sudo().browse(partner_id)
+        if not partner.facebook_id:
+            _logger.error(f"No Facebook ID found for partner {partner_id}")
+            return False
+
+        url = f'https://graph.facebook.com/v11.0/me/messages?access_token={access_token}'
+        payload = {
+            'recipient': {'id': partner.facebook_id},
+            'message': {'text': message}
+        }
+        try:
+            _logger.info(f"Sending request to Facebook API: {url}")
+            _logger.info(f"Payload: {payload}")
+            response = requests.post(url, json=payload)
+            _logger.info(f"Facebook API response: {response.status_code} - {response.text}")
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            _logger.error(f"Error sending message to Facebook: {str(e)}")
+            return False
+        
+        
     def _handle_verification(self, kwargs):
         """
         Handles the webhook verification when a GET request is received from Facebook.
