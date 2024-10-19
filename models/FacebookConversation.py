@@ -33,7 +33,8 @@ class FacebookConversation(models.Model):
         ('user_notification', 'User notification'),
     ], string='Message Type', default='comment')
     subtype_id = fields.Many2one('mail.message.subtype', string='Subtype')
-    
+    message_id = fields.Char(string='Message ID', index=True)  # Add this field
+
     
     @api.model
     def create(self, vals):
