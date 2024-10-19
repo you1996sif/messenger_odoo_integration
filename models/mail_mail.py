@@ -11,7 +11,10 @@ class MailMail(models.Model):
 
     @api.model
     def create(self, values):
-        _logger.info("create(self, values):")
+        _logger.info(f"create(self, values):")
+        _logger.info(f"create(self, values):{values}")
+        
+        
         # Check if the email is related to facebook.user.conversation
         if values.get('model') == 'facebook.user.conversation':
             _logger.info("t('model') == 'facebook.user")
