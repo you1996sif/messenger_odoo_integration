@@ -1,0 +1,44 @@
+<odoo>
+    <data>
+        <!-- Tree View -->
+        <record id="view_messenger_message_tree" model="ir.ui.view">
+            <field name="name">messenger_message.tree</field>
+            <field name="model">messenger_message</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="text"/>
+                    <field name="sender_id"/>
+                    <field name="received_at"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Form View -->
+        <record id="view_messenger_message_form" model="ir.ui.view">
+            <field name="name">messenger_message.form</field>
+            <field name="model">messenger_message</field>
+            <field name="arch" type="xml">
+                <form string="Messenger Message">
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="text"/>
+                            <field name="sender_id"/>
+                            <field name="received_at"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        <record id="action_messenger_message" model="ir.actions.act_window">
+            <field name="name">Messenger Message</field>
+            <field name="res_model">messenger_message</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <menuitem id="menu_messenger_message"
+            name="Messenger"
+            action="action_messenger_message"/>
+    </data>
+</odoo>

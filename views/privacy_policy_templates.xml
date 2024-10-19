@@ -1,0 +1,54 @@
+
+<odoo>
+    <template id="privacy_policy_template">
+        <div class="container">
+            <h1>Privacy Policy for Odoo MessRam</h1>
+            <p>Effective Date: October 14, 2023</p>
+
+            <h2>Introduction</h2>
+            <p>Welcome to Odoo MessRam. Your privacy is important to us. This Privacy Policy outlines how we collect, use, and protect your personal information when you use our application.</p>
+
+            <h2>Information We Collect</h2>
+            <p>We collect the following personal data from our users:</p>
+            <ul>
+                <li>Names</li>
+                <li>Email Addresses</li>
+                <li>Messages</li>
+                <li>Date of Birth (DOB)</li>
+            </ul>
+
+            <h2>Purpose of Data Collection</h2>
+            <p>The information we collect is used for the following purposes:</p>
+            <ul>
+                <li>To handle and manage messages sent through the Odoo app.</li>
+                <li>To improve our services and enhance user experience.</li>
+            </ul>
+
+            <h2>User Rights</h2>
+            <p>You have the following rights regarding your personal data:</p>
+            <ul>
+                <li><strong>Access:</strong> You have the right to request a copy of the personal data we hold about you.</li>
+                <li><strong>Correction:</strong> You have the right to request correction of any inaccurate or incomplete data.</li>
+                <li><strong>Deletion:</strong> You have the right to request the deletion of your personal data, subject to certain legal obligations.</li>
+                <li><strong>Objection:</strong> You have the right to object to the processing of your personal data in certain situations.</li>
+            </ul>
+
+            <h2>Data Security</h2>
+            <p>We take appropriate measures to protect your personal data against unauthorized access, alteration, disclosure, or destruction. We implement technical and organizational measures to safeguard your information.</p>
+
+            <h2>Data Sharing</h2>
+            <p>We do not share your personal data with any third parties. Your information is used solely for the purposes outlined in this policy.</p>
+
+            <h2>Cookies and Tracking Technologies</h2>
+            <p>We do not use cookies or other tracking technologies to collect personal data.</p>
+
+            <h2>Changes to This Privacy Policy</h2>
+            <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated effective date.</p>
+
+            <h2>Contact Information</h2>
+            <p>If you have any questions or concerns about this Privacy Policy, please contact us at:</p>
+            <p>Email: <a href="mailto:Yasir@al-saleem.com">Yasir@al-saleem.com</a></p>
+            <p>Phone: +9647801654456</p>
+        </div>
+    </template>
+</odoo>

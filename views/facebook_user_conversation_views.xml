@@ -1,0 +1,64 @@
+<odoo>
+    <data>
+        <record id="view_facebook_user_conversation_form" model="ir.ui.view">
+            <field name="name">facebook.user.conversation.form</field>
+            <field name="model">facebook.user.conversation</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                       <button name="action_archive" string="Archive" type="object" invisible="conversation_status == 'archived'"/>
+                        <button name="action_unarchive" string="Unarchive" type="object" invisible="conversation_status == 'active'"/>
+                    </header>
+                    <sheet>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="facebook_id"/>
+                            <field name="last_message_date"/>
+                            <field name="conversation_status"/>
+                        </group>
+                        <notebook>
+                            <page string="Conversation">
+                                <field name="message_ids">
+                                    <tree>
+                                        <field name="date"/>
+                                        <field name="sender"/>
+                                        <field name="message"/>
+                                    </tree>
+                                </field>
+                            </page>
+                        </notebook>
+                    </sheet>
+                    <div class="oe_chatter">
+                        <field name="message_follower_ids"/>
+                        <field name="message_ids"/>
+                    </div>
+                </form>
+            </field>
+        </record>
+
+        <record id="view_facebook_user_conversation_tree" model="ir.ui.view">
+            <field name="name">facebook.user.conversation.tree</field>
+            <field name="model">facebook.user.conversation</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="partner_id"/>
+                    <field name="last_message_date"/>
+                    <field name="conversation_status"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_facebook_user_conversation" model="ir.actions.act_window">
+            <field name="name">Facebook Conversations</field>
+            <field name="res_model">facebook.user.conversation</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <menuitem id="menu_facebook_user_conversation"
+                name="Facebook user Conversations"
+                action="action_facebook_user_conversation"
+                parent="mail.menu_root_discuss"
+                sequence="21"/>
+
+    </data>
+</odoo>
