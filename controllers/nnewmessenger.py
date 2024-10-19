@@ -155,6 +155,7 @@ class FacebookWebhookController(http.Controller):
         Handles incoming messages from the Facebook webhook, checks if the customer exists,
         and either communicates via Chatter or adds a new partner.
         """
+        _logger.info('dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd')
         message = event['message']
         sender_id = event['sender']['id']
         _logger.info(f'Received message: {message} from {sender_id}')
@@ -163,13 +164,17 @@ class FacebookWebhookController(http.Controller):
         partner = self._get_or_create_partner(user_profile)
         conversation = request.env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
         
+        _logger.info('cleeeeeeeeeeeeeeeeeeeeeean')
         # Strip HTML tags from the message
         clean_message = self.strip_html(message.get('text', ''))
+        _logger.info('cleeeeeeeeeeeeeeeeeeeeeeaned')
         
         
         if clean_message:  # Only process if there's actual content
+            _logger.info('iffffffffff cleeeeeeeeeeeeeeeeeeeeeeaned')
             
             conversation.add_message_to_chatter(clean_message, 'customer')
+            _logger.info('connnnnnnn cleeeeeeeeeeeeeeeeeeeeeeaned')
         # Create Facebook conversation message
        # facebook_message = request.env['facebook_conversation'].sudo().create({
          #   'user_conversation_id': conversation.id,
