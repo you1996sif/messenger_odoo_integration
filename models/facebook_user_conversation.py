@@ -159,12 +159,14 @@ class FacebookUserConversation(models.Model):
     #     self.write({'last_message_date': fields.Datetime.now()})
         
     def add_message_to_chatter(self, message_text, sender, message_id=False):
+        _logger.info(' add_message_to_chatter add_message_to_chatter add_message_to_chatter add_message_to_chatter add_message_to_chatter')
         self.message_post(
             body=message_text,
             message_type='comment',
             subtype_xmlid='mail.mt_comment',
             author_id=self.partner_id.id if sender == 'customer' else self.env.user.partner_id.id,
         )
+        _logger.info('self.message_postself.message_postself.message_postself.message_postself.message_post')
         
         self.env['facebook_conversation'].sudo().create({
             'user_conversation_id': self.id,
@@ -175,6 +177,9 @@ class FacebookUserConversation(models.Model):
             'message_type': 'comment',
             'message_id': message_id,
         })
+        _logger.info('self.facebook_conversation.facebook_conversation.facebook_conversation.facebook_conversation.message_post')
 
         self.write({'last_message_date': fields.Datetime.now()})
+        _logger.info('self.last_message_date.last_message_date.last_message_date.last_message_date.message_post')
         self.env['mail.mail'].search_and_cancel_by_body(self.body_text)
+        _logger.info("env['mail.mail'].search_and_cancel_by_body(self.body_t   env['mail.mail'].search_and_cancel_by_body(self.body_t")
