@@ -100,18 +100,18 @@ class FacebookWebhookController(http.Controller):
             return Response("Failed verification", status=403)
 
     def _handle_webhook_event(self):
-        """
-        Handles incoming POST requests from Facebook, containing webhook events (messages, postbacks, etc.).
-        """
-        _logger.info('Received POST request with webhook data')
-        data = json.loads(request.httprequest.data.decode('utf-8'))
-        _logger.info(f'Received data: {data}')
+        try:
+            data = json.loads(request.httprequest.data.decode('utf-8'))
+            _logger.info(f'Received data: {data}')
 
-        # Loop through all the entries in the webhook data
-        for entry in data.get('entry', []):
-            self._process_entry(entry)
+            for entry in data.get('entry', []):
+                self._process_entry(entry)
 
-        return 'Success'
+            return Response("OK", status=200)
+        except Exception as e:
+            _logger.exception(f'Error in _handle_webhook_event: {str(e)}')
+            return Response("Internal Server Error", status=500)
+
 
     def _process_entry(self, entry):
         """

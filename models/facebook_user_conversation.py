@@ -68,12 +68,11 @@ class FacebookUserConversation(models.Model):
     
     def add_message_to_chatter(self, message_text, sender):
         # Add the message to the chatter
-        self.message_post(
+        self.with_context(from_facebook=True).message_post(
             body=message_text,
             message_type='comment',
             subtype_xmlid='mail.mt_comment',
             author_id=self.partner_id.id if sender == 'customer' else self.env.user.id,
-            context={'from_facebook': True}
         )
 
         # Create a record in the facebook_conversation model
