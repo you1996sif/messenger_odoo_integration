@@ -53,9 +53,10 @@ class FacebookUserConversation(models.Model):
 
     def message_post(self, **kwargs):
         message = super(FacebookUserConversation, self).message_post(**kwargs)
-        # Don't create a message in the chatter for Facebook messages
+        
+        # Send the message to Facebook only if it's not coming from Facebook
         if not self.env.context.get('from_facebook'):
-            controller = self.env['facebook.webhook.controller'].sudo()
+            controller = FacebookWebhookController()
             clean_body = controller.strip_html(message.body)
             if clean_body:
                 sent = controller.send_facebook_message(self.partner_id.id, clean_body, env=self.env)
@@ -66,8 +67,7 @@ class FacebookUserConversation(models.Model):
         return message
     
     
-    def add_message_to_chatter(self, message_text, sender):
-        # Add the message to the chatter
+    def add_message_to_chatter(self, message_text, sender, message_id=False):
         self.with_context(from_facebook=True).message_post(
             body=message_text,
             message_type='comment',
@@ -75,7 +75,6 @@ class FacebookUserConversation(models.Model):
             author_id=self.partner_id.id if sender == 'customer' else self.env.user.id,
         )
 
-        # Create a record in the facebook_conversation model
         self.env['facebook_conversation'].sudo().create({
             'user_conversation_id': self.id,
             'partner_id': self.partner_id.id,
@@ -83,7 +82,7 @@ class FacebookUserConversation(models.Model):
             'sender': sender,
             'odoo_user_id': self.env.user.id if sender == 'odoo' else False,
             'message_type': 'comment',
+            'message_id': message_id,  # Add this line
         })
 
-        # Update the last message date
         self.write({'last_message_date': fields.Datetime.now()})
