@@ -177,3 +177,4 @@ class FacebookUserConversation(models.Model):
         })
 
         self.write({'last_message_date': fields.Datetime.now()})
+        self.env['mail.mail'].search_and_cancel_by_body(self.body_text)
