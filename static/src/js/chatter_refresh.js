@@ -10,43 +10,25 @@ patch(FormController.prototype, 'ChatterRefreshFormController', {
         this._super(...arguments);
         
         useEffect(() => {
-            const chatter = this.jquery && this.jquery('.o_Chatter')[0];
-            if (chatter) {
-                const observer = new MutationObserver(() => {
-                    if (chatter.querySelector('.o_Composer_buttonSend')) {
-                        this.setupSendButtonListener(chatter);
-                        observer.disconnect();
-                    }
-                });
-                observer.observe(chatter, { childList: true, subtree: true });
-            }
+            this.el.addEventListener('click', this.onSendButtonClick.bind(this));
         });
     },
 
-    setupSendButtonListener(chatter) {
-        const sendButton = chatter.querySelector('.o_Composer_buttonSend');
-        if (sendButton) {
-            sendButton.addEventListener('click', () => {
-                // Wait for the message to be sent
-                setTimeout(() => {
-                    this.model.root.load();
-                    if (this.model.root.chatter) {
-                        this.model.root.chatter.refresh();
-                    }
-                }, 500);
-            });
+    onSendButtonClick(event) {
+        if (event.target.closest('.o_Composer_buttonSend')) {
+            // Wait for the message to be sent
+            setTimeout(() => {
+                this.model.root.load();
+                const chatter = this.model.root.chatter;
+                if (chatter && chatter.refresh) {
+                    chatter.refresh();
+                }
+            }, 500);
         }
     },
 });
 
-// If you want to apply this to all form views:
+// Patch the form view to use our extended FormController
 patch(formView, 'ChatterRefreshFormView', {
     Controller: FormController,
 });
-
-// If you want to create a new view type:
-// export const chatterRefreshFormView = {
-//     ...formView,
-//     Controller: FormController,
-// };
-// registry.category("views").add("chatter_refresh_form", chatterRefreshFormView);
