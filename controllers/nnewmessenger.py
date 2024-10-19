@@ -80,36 +80,6 @@ class FacebookWebhookController(http.Controller):
     @staticmethod
     def strip_html(text):
         return re.sub('<[^<]+?>', '', text)
-    
-    
-    @staticmethod
-    def send_facebook_message(partner_id, message, env=None):
-        if env is None:
-            env = request.env
-        
-        _logger.info(f"Attempting to send message to partner {partner_id}: {message}")
-        partner = env['res.partner'].sudo().browse(partner_id)
-        if not partner.facebook_id:
-            _logger.error(f"No Facebook ID found for partner {partner_id}")
-            return False
-
-        url = f'https://graph.facebook.com/v11.0/me/messages?access_token={access_token}'
-        payload = {
-            'recipient': {'id': partner.facebook_id},
-            'message': {'text': message}
-        }
-        try:
-            _logger.info(f"Sending request to Facebook API: {url}")
-            _logger.info(f"Payload: {payload}")
-            response = requests.post(url, json=payload)
-            _logger.info(f"Facebook API response: {response.status_code} - {response.text}")
-            response.raise_for_status()
-            return True
-        except requests.exceptions.RequestException as e:
-            _logger.error(f"Error sending message to Facebook: {str(e)}")
-            return False
-        
-        
     def _handle_verification(self, kwargs):
         """
         Handles the webhook verification when a GET request is received from Facebook.
@@ -177,6 +147,10 @@ class FacebookWebhookController(http.Controller):
             self._handle_message_reads(event)
 
     def _handle_messages(self, event):
+        """
+        Handles incoming messages from the Facebook webhook, checks if the customer exists,
+        and either communicates via Chatter or adds a new partner.
+        """
         message = event['message']
         sender_id = event['sender']['id']
         _logger.info(f'Received message: {message} from {sender_id}')
@@ -187,15 +161,33 @@ class FacebookWebhookController(http.Controller):
         
         # Strip HTML tags from the message
         clean_message = self.strip_html(message.get('text', ''))
-        message_id = message.get('mid')  # Facebook's unique message ID
         
-        if clean_message and message_id:
-            # Check if the message already exists
-            existing_message = request.env['facebook_conversation'].sudo().search([('message_id', '=', message_id)], limit=1)
-            if not existing_message:
-                conversation.add_message_to_chatter(clean_message, 'customer', message_id)
-            else:
-                _logger.info(f'Duplicate message detected and skipped: {message_id}')
+        
+        if clean_message:  # Only process if there's actual content
+            
+            conversation.add_message_to_chatter(clean_message, 'customer')
+        # Create Facebook conversation message
+       # facebook_message = request.env['facebook_conversation'].sudo().create({
+         #   'user_conversation_id': conversation.id,
+           # 'partner_id': partner.id,
+          #  'message': clean_message,
+         #   'sender': 'customer',
+        #    'message_type': 'comment',
+       # })
+        
+        # Post message to the conversation's chatter
+        #conversation.with_context(from_facebook=True).message_post(
+           # body = clean_message,
+          #  message_type='comment',
+         #   subtype_xmlid='mail.mt_comment'
+        #)
+
+        # Store the message in the `messenger_message` model (if you still need this)
+        #request.env['messenger_message'].sudo().create({
+          #  'name': message.get('mid'),
+         #   'text': message.get('text', ''),
+          #  'sender_id': sender_id,
+        #})
 
         return True
 
