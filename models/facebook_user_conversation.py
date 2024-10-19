@@ -49,31 +49,22 @@ class FacebookUserConversation(models.Model):
     def action_unarchive(self):
         self.write({'conversation_status': 'active'})
     
-        
+
+
     def message_post(self, **kwargs):
-        context = dict(self.env.context)
-        if context.get('from_facebook'):
-            # If the message is from Facebook, don't send email notifications
-            context.update({
-                'mail_create_nosubscribe': True,
-                'mail_create_nolog': True,
-                'mail_notrack': True,
-            })
-        return super(FacebookUserConversation, self.with_context(context)).message_post(**kwargs)
-    # def message_post(self, **kwargs):
-    #     message = super(FacebookUserConversation, self).message_post(**kwargs)
+        message = super(FacebookUserConversation, self).message_post(**kwargs)
         
-    #     # Send the message to Facebook only if it's not coming from Facebook
-    #     if not self.env.context.get('from_facebook'):
-    #         controller = FacebookWebhookController()
-    #         clean_body = controller.strip_html(message.body)
-    #         if clean_body:
-    #             sent = controller.send_facebook_message(self.partner_id.id, clean_body, env=self.env)
+        # Send the message to Facebook only if it's not coming from Facebook
+        if not self.env.context.get('from_facebook'):
+            controller = FacebookWebhookController()
+            clean_body = controller.strip_html(message.body)
+            if clean_body:
+                sent = controller.send_facebook_message(self.partner_id.id, clean_body, env=self.env)
                 
-    #             if not sent:
-    #                 raise UserError(_("Failed to send message to Facebook."))
+                if not sent:
+                    raise UserError(_("Failed to send message to Facebook."))
         
-    #     return message
+        return message
     # def message_post(self, **kwargs):
     #     _logger.info(f"message_post called with context: {self.env.context}")
     #     if self.env.context.get('facebook_message'):
@@ -140,36 +131,14 @@ class FacebookUserConversation(models.Model):
     #     self.write({'last_message_date': fields.Datetime.now()})
         
     
-    # def add_message_to_chatter(self, message_text, sender, message_id=False):
-    #     self.with_context(from_facebook=True).message_post(
-    #         body=message_text,
-    #         message_type='comment',
-    #         subtype_xmlid='mail.mt_comment',
-    #         author_id=self.partner_id.id if sender == 'customer' else self.env.user.id,
-    #     )
-
-    #     self.env['facebook_conversation'].sudo().create({
-    #         'user_conversation_id': self.id,
-    #         'partner_id': self.partner_id.id,
-    #         'message': message_text,
-    #         'sender': sender,
-    #         'odoo_user_id': self.env.user.id if sender == 'odoo' else False,
-    #         'message_type': 'comment',
-    #         'message_id': message_id,  # Add this line
-    #     })
-
-    #     self.write({'last_message_date': fields.Datetime.now()})
-        
     def add_message_to_chatter(self, message_text, sender, message_id=False):
-        # Add message to chatter without triggering email notifications
-        self.with_context(mail_create_nosubscribe=True, mail_create_nolog=True, mail_notrack=True, from_facebook=True).message_post(
+        self.with_context(from_facebook=True).message_post(
             body=message_text,
             message_type='comment',
             subtype_xmlid='mail.mt_comment',
             author_id=self.partner_id.id if sender == 'customer' else self.env.user.id,
         )
 
-        # Create a record in facebook_conversation model
         self.env['facebook_conversation'].sudo().create({
             'user_conversation_id': self.id,
             'partner_id': self.partner_id.id,
@@ -177,8 +146,7 @@ class FacebookUserConversation(models.Model):
             'sender': sender,
             'odoo_user_id': self.env.user.id if sender == 'odoo' else False,
             'message_type': 'comment',
-            'message_id': message_id,
+            'message_id': message_id,  # Add this line
         })
 
-        # Update the last message date
         self.write({'last_message_date': fields.Datetime.now()})
