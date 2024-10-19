@@ -72,11 +72,18 @@ class FacebookUserConversation(models.Model):
     #     return super(FacebookUserConversation, self).message_post(**kwargs)
 
     def send_facebook_message(self, message):
+        self.ensure_one()
         controller = FacebookWebhookController()
         clean_message = controller.strip_html(message)
         if clean_message:
             sent = controller.send_facebook_message(self.partner_id.id, clean_message, env=self.env)
             if sent:
+                self.message_post(
+                    body=clean_message,
+                    message_type='comment',
+                    subtype_xmlid='mail.mt_comment',
+                    author_id=self.env.user.partner_id.id,
+                )
                 self.env['facebook_conversation'].sudo().create({
                     'user_conversation_id': self.id,
                     'partner_id': self.partner_id.id,
@@ -131,14 +138,34 @@ class FacebookUserConversation(models.Model):
     #     self.write({'last_message_date': fields.Datetime.now()})
         
     
+    # def add_message_to_chatter(self, message_text, sender, message_id=False):
+    #     self.with_context(from_facebook=True).message_post(
+    #         body=message_text,
+    #         message_type='comment',
+    #         subtype_xmlid='mail.mt_comment',
+    #         author_id=self.partner_id.id if sender == 'customer' else self.env.user.id,
+    #     )
+
+    #     self.env['facebook_conversation'].sudo().create({
+    #         'user_conversation_id': self.id,
+    #         'partner_id': self.partner_id.id,
+    #         'message': message_text,
+    #         'sender': sender,
+    #         'odoo_user_id': self.env.user.id if sender == 'odoo' else False,
+    #         'message_type': 'comment',
+    #         'message_id': message_id,  # Add this line
+    #     })
+
+    #     self.write({'last_message_date': fields.Datetime.now()})
+        
     def add_message_to_chatter(self, message_text, sender, message_id=False):
-        self.with_context(from_facebook=True).message_post(
+        self.message_post(
             body=message_text,
             message_type='comment',
             subtype_xmlid='mail.mt_comment',
-            author_id=self.partner_id.id if sender == 'customer' else self.env.user.id,
+            author_id=self.partner_id.id if sender == 'customer' else self.env.user.partner_id.id,
         )
-
+        
         self.env['facebook_conversation'].sudo().create({
             'user_conversation_id': self.id,
             'partner_id': self.partner_id.id,
@@ -146,7 +173,7 @@ class FacebookUserConversation(models.Model):
             'sender': sender,
             'odoo_user_id': self.env.user.id if sender == 'odoo' else False,
             'message_type': 'comment',
-            'message_id': message_id,  # Add this line
+            'message_id': message_id,
         })
 
         self.write({'last_message_date': fields.Datetime.now()})
