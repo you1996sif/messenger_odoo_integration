@@ -1,4 +1,4 @@
-from odoo import http
+from odoo import http, fields, api
 import logging
 from odoo.http import request, Response
 import json
@@ -138,24 +138,33 @@ class FacebookWebhookController(http.Controller):
         sender_id = event['sender']['id']
         _logger.info(f'Received message: {message} from {sender_id}')
 
-        # Fetch user profile information from Facebook
         user_profile = self._get_user_profile(sender_id)
-        
-        # Get or create partner
         partner = self._get_or_create_partner(user_profile)
+        conversation = request.env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
         
-        # Get or create user conversation
-        conversation = request.env['facebook.user.conversation'].sudo().with_context(from_facebook=True).create_or_update_conversation(partner.id)
-        clean_message = self.strip_html(message['text'])
+        # Strip HTML tags from the message
+        clean_message = self.strip_html(message.get('text', ''))
+        
+        
         if clean_message:  # Only process if there's actual content
-            # Create the message in facebook_conversation model
-            facebook_message = request.env['facebook_conversation'].sudo().create({
-                'user_conversation_id': conversation.id,
-                'message': clean_message,
-                'sender': 'customer',
-                'message_type': 'comment',
-            })
-            conversation.sudo().write({'last_message_date': fields.Datetime.now()})
+            try:
+                # Create the message in facebook_conversation model
+                facebook_message = request.env['facebook_conversation'].sudo().create({
+                    'user_conversation_id': conversation.id,
+                    'partner_id': partner.id,
+                    'message': clean_message,
+                    'sender': 'customer',
+                    'message_type': 'comment',
+                })
+                
+                # Update the last_message_date of the conversation
+                conversation.sudo().write({'last_message_date': fields.Datetime.now()})
+                
+                request.env.cr.commit()  # Commit the transaction
+            except Exception as e:
+                _logger.error(f"Error creating Facebook message: {str(e)}")
+                request.env.cr.rollback()  # Rollback the transaction in case of error
+                return False
         # Create Facebook conversation message
        # facebook_message = request.env['facebook_conversation'].sudo().create({
          #   'user_conversation_id': conversation.id,
@@ -252,12 +261,14 @@ class FacebookWebhookController(http.Controller):
             env = request.env
         
         clean_message = self.strip_html(message)
+        
         if not clean_message:
             _logger.warning(f"Attempted to send empty message to partner {partner_id}")
             return False
-        message = clean_message
-        _logger.info(f"Attempting to send message to partner {partner_id}: {message}")
-        partner = request.env['res.partner'].sudo().browse(partner_id)
+        
+        
+        _logger.info(f"Attempting to send message to partner {partner_id}: {clean_message}")
+        partner = env['res.partner'].sudo().browse(partner_id)
         if not partner.facebook_id:
             _logger.error(f"No Facebook ID found for partner {partner_id}")
             return False
@@ -270,6 +281,28 @@ class FacebookWebhookController(http.Controller):
             'message': {'text': message}
         }
         response = requests.post(url, json=payload)
+        if response.status_code == 200:
+            try:
+                conversation = env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
+                env['facebook_conversation'].sudo().create({
+                    'user_conversation_id': conversation.id,
+                    'partner_id': partner.id,
+                    'message': clean_message,
+                    'sender': 'odoo',
+                    'odoo_user_id': env.user.id,
+                    'message_type': 'comment',
+                })
+                # Update the last_message_date of the conversation
+                conversation.sudo().write({'last_message_date': fields.Datetime.now()})
+                env.cr.commit()  # Commit the transaction
+                return True
+            except Exception as e:
+                _logger.error(f"Error creating Facebook message: {str(e)}")
+                env.cr.rollback()  # Rollback the transaction in case of error
+                return False
+        else:
+            _logger.error(f"Failed to send Facebook message: {response.text}")
+            return False
         # conversation = env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
         # env['facebook_conversation'].sudo().create({
         #     'user_conversation_id': conversation.id,
@@ -281,23 +314,23 @@ class FacebookWebhookController(http.Controller):
         # conversation.message_post(body=message, message_type='comment', subtype_xmlid='mail.mt_comment')
         
 
-        if response.status_code == 200:
-            conversation = env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
-            # Message sent successfully, create a record in our conversation model
-            request.env['facebook_conversation'].sudo().with_context(from_facebook=True).create({
-                'partner_id': partner.id,
-                'message': message,
-                'sender': 'odoo',
-                'odoo_user_id': request.env.user.id,
-                'user_conversation_id': conversation.id,
-                'message_type': 'comment',
-            })
-            conversation.sudo().write({'last_message_date': fields.Datetime.now()})
-            # conversation.message_post(body=message, message_type='comment', subtype_xmlid='mail.mt_comment')
-            return True
-        else:
-            _logger.error(f"Failed to send Facebook message: {response.text}")
-            return False
+        # if response.status_code == 200:
+        #     conversation = env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
+        #     # Message sent successfully, create a record in our conversation model
+        #     request.env['facebook_conversation'].sudo().with_context(from_facebook=True).create({
+        #         'partner_id': partner.id,
+        #         'message': message,
+        #         'sender': 'odoo',
+        #         'odoo_user_id': request.env.user.id,
+        #         'user_conversation_id': conversation.id,
+        #         'message_type': 'comment',
+        #     })
+        #     conversation.sudo().write({'last_message_date': fields.Datetime.now()})
+        #     # conversation.message_post(body=message, message_type='comment', subtype_xmlid='mail.mt_comment')
+        #     return True
+        # else:
+        #     _logger.error(f"Failed to send Facebook message: {response.text}")
+        #     return False
             
         # Your Facebook page access token
 

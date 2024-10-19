@@ -18,15 +18,14 @@ class FacebookConversation(models.Model):
     _order = 'create_date desc'
 
 
+    user_conversation_id = fields.Many2one('facebook.user.conversation', string='User Conversation', ondelete='cascade', required=True)
     create_date = fields.Datetime(string='Date', default=fields.Datetime.now, readonly=True)
-
-    partner_id = fields.Many2one('res.partner', string='Partner', required=True)
+    partner_id = fields.Many2one('res.partner', string='Partner')
     message = fields.Text(string='Message', required=True)
     date = fields.Datetime(string='Date', default=fields.Datetime.now)
     sender = fields.Selection([('customer', 'Customer'), ('odoo', 'Odoo User')], string='Sender', required=True)
     odoo_user_id = fields.Many2one('res.users', string='Odoo User')
     reply_message = fields.Text(string='Reply')
-    user_conversation_id = fields.Many2one('facebook.user.conversation', string='User Conversation', ondelete='cascade')
     message_type = fields.Selection([
         ('email', 'Email'),
         ('comment', 'Comment'),
@@ -34,11 +33,14 @@ class FacebookConversation(models.Model):
         ('user_notification', 'User notification'),
     ], string='Message Type', default='comment')
     subtype_id = fields.Many2one('mail.message.subtype', string='Subtype')
+    
+    
     @api.model
     def create(self, vals):
-        record = super(FacebookConversation, self).create(vals)
-        record.user_conversation_id.write({'last_message_date': record.date})
-        return record
+        if 'user_conversation_id' in vals and 'partner_id' not in vals:
+            conversation = self.env['facebook.user.conversation'].browse(vals['user_conversation_id'])
+            vals['partner_id'] = conversation.partner_id.id
+        return super(FacebookConversation, self).create(vals)
     
     @api.model
     def create_from_facebook(self, partner, message):
