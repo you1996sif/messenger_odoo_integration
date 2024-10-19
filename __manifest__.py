@@ -12,14 +12,18 @@
     'website': "https://www.yourcompany.com",
 
     'depends': ['base', 'web', 'contacts'],
-
+    'assets': {
+        'web.assets_backend': [
+            'messenger_integration/static/src/js/chatter_refresh.js',
+        ],
+    },
     # always loaded
     'data': [
         'security/ir.model.access.csv',
         'views/message_views.xml',
         'views/privacy_policy_templates.xml',
         'views/facebook_conversation_views.xml',
-'views/facebook_user_conversation_views.xml',
+        'views/facebook_user_conversation_views.xml',
 
     ],
     'installable': True,
