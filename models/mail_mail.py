@@ -1,4 +1,6 @@
-from odoo import models, api
+from odoo import models, api, _
+from odoo.exceptions import UserError
+
 
 class MailMail(models.Model):
     _inherit = 'mail.mail'
@@ -20,3 +22,25 @@ class MailMail(models.Model):
         # Process other emails normally
         return super(MailMail, self - facebook_mails)._send(
             auto_commit=auto_commit, raise_exception=raise_exception, smtp_session=smtp_session)
+        
+    @api.model
+    def search_and_cancel_by_body(self, body_text):
+        # Search for emails containing the given text in the body
+        emails = self.search([('body_html', 'ilike', body_text), ('state', 'in', ['outgoing', 'ready'])])
+        
+        if not emails:
+            raise UserError(_("No matching emails found to cancel."))
+        
+        # Cancel the found emails
+        cancelled_count = emails.write({'state': 'cancel'})
+        
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _("Emails Cancelled"),
+                'message': _("%s email(s) have been cancelled.") % cancelled_count,
+                'type': 'success',
+                'sticky': False,
+            }
+        }
