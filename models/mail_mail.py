@@ -1,6 +1,6 @@
-from odoo import models, api, _
+from odoo import models, api, _, fields
 from odoo.exceptions import UserError
-
+import ast
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -11,16 +11,20 @@ class MailMail(models.Model):
 
     @api.model
     def create(self, values):
-        _logger.info(f"create(self, values):")
-        _logger.info(f"create(self, values):{values}")
-        
-        
-        # Check if the email is related to facebook.user.conversation
-        if values.get('model') == 'facebook.user.conversation':
-            _logger.info("t('model') == 'facebook.user")
-            # Set the state to 'sent' immediately
-            values['state'] = 'sent'
-        _logger.info("elssssssssssssssst('model') == 'facebook.user")
+        if 'headers' in values:
+            try:
+                headers = ast.literal_eval(values['headers'])
+                if isinstance(headers, dict) and 'X-Odoo-Objects' in headers:
+                    x_odoo_objects = headers['X-Odoo-Objects']
+                    if isinstance(x_odoo_objects, str) and x_odoo_objects.startswith('facebook.user.conversation'):
+                        # Set the state to 'sent' immediately
+                        values['state'] = 'sent'
+                        # Optionally, set a sent date
+                        values['date'] = fields.Datetime.now()
+            except (ValueError, SyntaxError):
+                # If there's an error parsing the headers, just proceed normally
+                pass
+
         return super(MailMail, self).create(values)
 
     def _send(self, auto_commit=False, raise_exception=False, smtp_session=None):
