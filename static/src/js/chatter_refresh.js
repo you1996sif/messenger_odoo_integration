@@ -7,7 +7,8 @@ import { useEffect } from "@odoo/owl";
 
 patch(FormController.prototype, {
     setup() {
-        this._super(...arguments);
+        const originalSetup = FormController.prototype.setup;
+        originalSetup.call(this, ...arguments);
         
         useEffect(() => {
             const chatter = this.el.querySelector('.o_Chatter');
@@ -34,7 +35,4 @@ patch(FormController.prototype, {
     },
 });
 
-// Patch the form view to use our extended FormController
-patch(formView, {
-    Controller: FormController,
-});
+// No need to patch the formView here, as we're directly patching the FormController prototype
