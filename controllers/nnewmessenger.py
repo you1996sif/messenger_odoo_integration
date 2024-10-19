@@ -68,8 +68,12 @@ class FacebookWebhookController(http.Controller):
 
         conversation = request.env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
         sent = self.send_facebook_message(partner_id, message)
+        _logger.info('11111111111 sent sent sent sent sent')
+        _logger.info( sent)
+
 
         if sent:
+            _logger.info(' 222222222sent sent sent sent sent')
             conversation.add_message_to_chatter(message, 'odoo')
             return True
         else:
