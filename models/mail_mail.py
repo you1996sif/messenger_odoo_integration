@@ -1,16 +1,23 @@
 from odoo import models, api, _
 from odoo.exceptions import UserError
 
+import logging
+
+_logger = logging.getLogger(__name__)
+
 
 class MailMail(models.Model):
     _inherit = 'mail.mail'
 
     @api.model
     def create(self, values):
+        _logger.info("create(self, values):")
         # Check if the email is related to facebook.user.conversation
         if values.get('model') == 'facebook.user.conversation':
+            _logger.info("t('model') == 'facebook.user")
             # Set the state to 'sent' immediately
             values['state'] = 'sent'
+        _logger.info("elssssssssssssssst('model') == 'facebook.user")
         return super(MailMail, self).create(values)
 
     def _send(self, auto_commit=False, raise_exception=False, smtp_session=None):
