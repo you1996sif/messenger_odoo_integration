@@ -41,41 +41,36 @@
 
 /** @odoo-module **/
 
+import { registry } from "@web/core/registry";
+import { useEffect } from "@odoo/owl";
+import { useBus, useService } from "@web/core/utils/hooks";
+import { ChatterContainer } from "@mail/components/chatter/chatter_container";
 
-import { patch } from '@web/core/utils/patch';
-import { ChatterContainer } from '@mail/components/chatter_container/chatter_container';
-
-patch(ChatterContainer.prototype, 'ChatterAutoRefresh', {
+class AutoRefreshChatter extends ChatterContainer {
     setup() {
-        this._super(...arguments);
-        this.intervalId = null;
-    },
-
-    mounted() {
-        this._super(...arguments);
-        this.startAutoRefresh();
-    },
-
-    willUnmount() {
-        this._super(...arguments);
-        this.stopAutoRefresh();
-    },
-
-    startAutoRefresh() {
-        this.intervalId = setInterval(() => {
-            this.refreshChatter();
-        }, 2000); // Refresh every 2 seconds
-    },
-
-    stopAutoRefresh() {
-        if (this.intervalId) {
-            clearInterval(this.intervalId);
-        }
-    },
+        super.setup();
+        
+        this.orm = useService("orm");
+        this.messaging = useService("messaging");
+        
+        useBus(this.messaging.bus, "discuss.channel/new_message", this.refreshChatter);
+        
+        useEffect(() => {
+            const intervalId = setInterval(() => {
+                this.refreshChatter();
+            }, 2000); // Refresh every 2 seconds
+            
+            return () => clearInterval(intervalId);
+        });
+    }
 
     async refreshChatter() {
         if (this.chatter) {
             await this.chatter.refresh();
         }
     }
-});
+}
+
+registry.category("fields").add("auto_refresh_chatter", AutoRefreshChatter);
+
+export default AutoRefreshChatter;
