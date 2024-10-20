@@ -1,0 +1,11 @@
+<templates xml:space="preserve">
+    <t t-name="messenger_integration.AutoRefreshChatter" owl="1">
+        <div class="o_AutoRefreshChatter">
+            <t t-foreach="state.messages" t-as="message" t-key="message.id">
+                <div class="o_Message">
+                    <t t-esc="message.body"/>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

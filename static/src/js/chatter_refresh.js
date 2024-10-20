@@ -39,46 +39,41 @@
 //     },
 // });
 
+/** @odoo-module **/
 
-import { useEffect } from "@odoo/owl";
+/** @odoo-module **/
+
+import { useState, useEffect } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
-import { FormController } from "@web/views/form/form_controller";
-import { formView } from "@web/views/form/form_view";
-import { registry } from "@web/core/registry";
 import { patch } from "@web/core/utils/patch";
+import { FormController } from "@web/views/form/form_controller";
 
 function useAutoRefresh(refreshInterval = 2000) {
     const orm = useService("orm");
+    const [messages, setMessages] = useState([]);
 
     useEffect(() => {
-        const intervalId = setInterval(() => {
-            console.log('Auto-refreshing');
-            orm.call("mail.message", "get_messages", [], {
-                model: this.props.resModel,
-                res_id: this.props.resId,
-                limit: 100,
-            }).then((messages) => {
-                console.log('Received new messages:', messages);
-                // Here you would update the messages in your UI
-            });
+        const intervalId = setInterval(async () => {
+            const fetchedMessages = await orm.call(
+                "facebook_conversation",
+                "search_read",
+                [[["user_conversation_id", "=", this.props.resId]]],
+                { fields: ["date", "sender", "message"], limit: 100, order: "date desc" }
+            );
+            setMessages(fetchedMessages);
         }, refreshInterval);
 
-        return () => {
-            clearInterval(intervalId);
-        };
+        return () => clearInterval(intervalId);
     });
+
+    return messages;
 }
 
 patch(FormController.prototype, {
     setup() {
         this._super(...arguments);
-        useAutoRefresh.call(this);
+        if (this.props.resModel === 'facebook.user.conversation') {
+            this.messages = useAutoRefresh.call(this);
+        }
     },
 });
-
-export const AutoRefreshFormView = {
-    ...formView,
-    Controller: FormController,
-};
-
-registry.category("views").add("auto_refresh_form", AutoRefreshFormView);
