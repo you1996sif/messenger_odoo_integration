@@ -38,61 +38,54 @@
 //         }
 //     },
 // });
-import { FormController } from "@web/views/form/form_controller";
-import { formView } from "@web/views/form/form_view";
-import { registry } from "@web/core/registry";
-import { patch } from "@web/core/utils/patch";
 
-patch(FormController.prototype, {
+
+import { registry } from "@web/core/registry";
+import { formView } from "@web/views/form/form_view";
+import { FormController } from "@web/views/form/form_controller";
+import { useEffect } from "@odoo/owl";
+
+class AutoRefreshFormController extends FormController {
     setup() {
-        this._super(...arguments);
+        super.setup();
         this.autoRefreshInterval = 2000; // 2 seconds
         this.autoRefreshIntervalId = null;
-        this.env.bus.on('ROUTE_CHANGE', this, this.stopAutoRefresh);
-        this.env.bus.on('FORM_VIEW_RENDERED', this, this.startAutoRefresh);
-    },
+        
+        useEffect(() => {
+            console.log('AutoRefreshFormController mounted');
+            this.startAutoRefresh();
+            return () => {
+                console.log('AutoRefreshFormController will unmount');
+                this.stopAutoRefresh();
+            };
+        });
+    }
 
     startAutoRefresh() {
+        console.log('Starting auto-refresh');
         if (!this.autoRefreshIntervalId) {
             this.autoRefreshIntervalId = setInterval(() => {
-                this.refreshChatter();
+                console.log('Auto-refreshing');
+                this.model.root.load();
+                this.render();
             }, this.autoRefreshInterval);
         }
-    },
+    }
 
     stopAutoRefresh() {
+        console.log('Stopping auto-refresh');
         if (this.autoRefreshIntervalId) {
             clearInterval(this.autoRefreshIntervalId);
             this.autoRefreshIntervalId = null;
         }
-    },
+    }
+}
 
-    refreshChatter() {
-        if (this.model && this.model.root) {
-            this.model.root.load();
-            const chatter = this.el.querySelector('.o_Chatter');
-            if (chatter) {
-                const messageList = chatter.querySelector('.o_Chatter_scrollPanel');
-                if (messageList) {
-                    messageList.scrollTop = messageList.scrollHeight;
-                }
-            }
-        }
-    },
-
-    destroy() {
-        this.stopAutoRefresh();
-        this.env.bus.off('ROUTE_CHANGE', this, this.stopAutoRefresh);
-        this.env.bus.off('FORM_VIEW_RENDERED', this, this.startAutoRefresh);
-        this._super(...arguments);
-    },
-});
-
-// Extend the form view to use our patched FormController
-const autoRefreshFormView = {
+export const autoRefreshFormView = {
     ...formView,
-    Controller: FormController,
+    Controller: AutoRefreshFormController,
 };
 
-// Register the new form view
 registry.category("views").add("auto_refresh_form", autoRefreshFormView);
+
+console.log('Auto-refresh form view module loaded');

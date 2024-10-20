@@ -11,7 +11,7 @@
   'author': 'Yousif Basil',
     'website': "https://www.yourcompany.com",
 
-    'depends': ['base', 'web', 'contacts'],
+    'depends': ['base', 'web', 'contacts', 'mail', 'web'],
     'assets': {
         'web.assets_backend': [
             'messenger_integration/static/src/js/chatter_refresh.js',
