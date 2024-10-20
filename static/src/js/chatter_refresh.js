@@ -41,53 +41,71 @@
 
 /** @odoo-module **/
 
+/** @odoo-module **/
+
 import { FormController } from "@web/views/form/form_controller";
 import { formView } from "@web/views/form/form_view";
+import { registry } from "@web/core/registry";
 import { patch } from "@web/core/utils/patch";
 import { useEffect } from "@odoo/owl";
 
-patch(FormController.prototype, 'ChatterRefreshFormController', {
+class AutoRefreshFormController extends FormController {
     setup() {
-        this._super(...arguments);
+        super.setup();
         
+        this.autoRefreshInterval = 2000; // 2 seconds
+        this.autoRefreshIntervalId = null;
+
         useEffect(() => {
-            const chatter = this.jquery && this.jquery('.o_Chatter')[0];
-            if (chatter) {
-                const observer = new MutationObserver(() => {
-                    if (chatter.querySelector('.o_Composer_buttonSend')) {
-                        this.setupSendButtonListener(chatter);
-                        observer.disconnect();
-                    }
-                });
-                observer.observe(chatter, { childList: true, subtree: true });
-            }
+            console.log('AutoRefreshFormController mounted');
+            this.startAutoRefresh();
+            return () => {
+                console.log('AutoRefreshFormController will unmount');
+                this.stopAutoRefresh();
+            };
         });
-    },
+    }
 
-    setupSendButtonListener(chatter) {
-        const sendButton = chatter.querySelector('.o_Composer_buttonSend');
-        if (sendButton) {
-            sendButton.addEventListener('click', () => {
-                // Wait for the message to be sent
-                setTimeout(() => {
-                    this.model.root.load();
-                    if (this.model.root.chatter) {
-                        this.model.root.chatter.refresh();
-                    }
-                }, 500);
-            });
+    startAutoRefresh() {
+        console.log('Starting auto-refresh');
+        if (!this.autoRefreshIntervalId) {
+            this.autoRefreshIntervalId = setInterval(() => {
+                console.log('Auto-refreshing');
+                this.refreshChatter();
+            }, this.autoRefreshInterval);
         }
-    },
-});
+    }
 
-// If you want to apply this to all form views:
-patch(formView, 'ChatterRefreshFormView', {
-    Controller: FormController,
-});
+    stopAutoRefresh() {
+        console.log('Stopping auto-refresh');
+        if (this.autoRefreshIntervalId) {
+            clearInterval(this.autoRefreshIntervalId);
+            this.autoRefreshIntervalId = null;
+        }
+    }
 
-// If you want to create a new view type:
-// export const chatterRefreshFormView = {
-//     ...formView,
-//     Controller: FormController,
-// };
-// registry.category("views").add("chatter_refresh_form", chatterRefreshFormView);
+    refreshChatter() {
+        if (this.model && this.model.root) {
+            this.model.root.load();
+            const chatter = this.el.querySelector('.o_Chatter');
+            if (chatter) {
+                const messageList = chatter.querySelector('.o_Chatter_scrollPanel');
+                if (messageList) {
+                    messageList.scrollTop = messageList.scrollHeight;
+                }
+            }
+        }
+    }
+}
+
+// Define the new form view
+const autoRefreshFormView = {
+    ...formView,
+    Controller: AutoRefreshFormController,
+};
+
+// Register the new form view
+registry.category("views").add("auto_refresh_form", autoRefreshFormView);
+
+// Patch the original FormController for backwards compatibility
+patch(FormController.prototype, AutoRefreshFormController.prototype);

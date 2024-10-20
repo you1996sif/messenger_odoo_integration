@@ -4,7 +4,7 @@
             <field name="name">facebook.user.conversation.form</field>
             <field name="model">facebook.user.conversation</field>
             <field name="arch" type="xml">
-                <form>
+                <form js_class="auto_refresh_form">
                     <header>
                        <button name="action_archive" string="Archive" type="object" invisible="conversation_status == 'archived'"/>
                         <button name="action_unarchive" string="Unarchive" type="object" invisible="conversation_status == 'active'"/>
@@ -28,7 +28,7 @@
                             </page>
                         </notebook>
                     </sheet>
-                    <div class="oe_chatter">
+                    <div >
                         <field name="message_follower_ids"/>
                         <field name="message_ids"/>
                     </div>
