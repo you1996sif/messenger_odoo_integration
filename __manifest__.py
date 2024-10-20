@@ -12,11 +12,11 @@
     'website': "https://www.yourcompany.com",
 
     'depends': ['base', 'web', 'contacts', 'mail', 'web'],
-    'assets': {
-        'web.assets_backend': [
-            'messenger_integration/static/src/js/chatter_refresh.js',
-        ],
-    },
+    # 'assets': {
+    #     'web.assets_backend': [
+    #         'messenger_integration/static/src/js/chatter_refresh.js',
+    #     ],
+    # },
     # always loaded
     'data': [
         'security/ir.model.access.csv',
