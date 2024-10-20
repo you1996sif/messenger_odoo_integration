@@ -41,39 +41,41 @@
 
 /** @odoo-module **/
 
-/** @odoo-module **/
 
-import { useState, useEffect } from "@odoo/owl";
-import { useService } from "@web/core/utils/hooks";
-import { patch } from "@web/core/utils/patch";
-import { FormController } from "@web/views/form/form_controller";
+import { patch } from '@web/core/utils/patch';
+import { ChatterContainer } from '@mail/components/chatter_container/chatter_container';
 
-function useAutoRefresh(refreshInterval = 2000) {
-    const orm = useService("orm");
-    const [messages, setMessages] = useState([]);
-
-    useEffect(() => {
-        const intervalId = setInterval(async () => {
-            const fetchedMessages = await orm.call(
-                "facebook_conversation",
-                "search_read",
-                [[["user_conversation_id", "=", this.props.resId]]],
-                { fields: ["date", "sender", "message"], limit: 100, order: "date desc" }
-            );
-            setMessages(fetchedMessages);
-        }, refreshInterval);
-
-        return () => clearInterval(intervalId);
-    });
-
-    return messages;
-}
-
-patch(FormController.prototype, {
+patch(ChatterContainer.prototype, 'ChatterAutoRefresh', {
     setup() {
         this._super(...arguments);
-        if (this.props.resModel === 'facebook.user.conversation') {
-            this.messages = useAutoRefresh.call(this);
+        this.intervalId = null;
+    },
+
+    mounted() {
+        this._super(...arguments);
+        this.startAutoRefresh();
+    },
+
+    willUnmount() {
+        this._super(...arguments);
+        this.stopAutoRefresh();
+    },
+
+    startAutoRefresh() {
+        this.intervalId = setInterval(() => {
+            this.refreshChatter();
+        }, 2000); // Refresh every 2 seconds
+    },
+
+    stopAutoRefresh() {
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
         }
     },
+
+    async refreshChatter() {
+        if (this.chatter) {
+            await this.chatter.refresh();
+        }
+    }
 });
