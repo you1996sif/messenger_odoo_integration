@@ -42,23 +42,24 @@
 
 import { useEffect } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
+import { FormController } from "@web/views/form/form_controller";
+import { formView } from "@web/views/form/form_view";
+import { registry } from "@web/core/registry";
+import { patch } from "@web/core/utils/patch";
 
-export function useAutoRefresh(refreshInterval = 2000) {
+function useAutoRefresh(refreshInterval = 2000) {
     const orm = useService("orm");
 
     useEffect(() => {
         const intervalId = setInterval(() => {
             console.log('Auto-refreshing');
             orm.call("mail.message", "get_messages", [], {
-                // You might need to adjust these parameters based on your needs
                 model: this.props.resModel,
                 res_id: this.props.resId,
                 limit: 100,
             }).then((messages) => {
-                // Update the messages in the chatter
-                // This part depends on how your chatter is implemented
-                // You might need to dispatch an action or update the state
                 console.log('Received new messages:', messages);
+                // Here you would update the messages in your UI
             });
         }, refreshInterval);
 
@@ -67,3 +68,17 @@ export function useAutoRefresh(refreshInterval = 2000) {
         };
     });
 }
+
+patch(FormController.prototype, {
+    setup() {
+        this._super(...arguments);
+        useAutoRefresh.call(this);
+    },
+});
+
+export const AutoRefreshFormView = {
+    ...formView,
+    Controller: FormController,
+};
+
+registry.category("views").add("auto_refresh_form", AutoRefreshFormView);

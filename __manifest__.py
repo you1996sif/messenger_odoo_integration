@@ -15,7 +15,6 @@
     'assets': {
         'web.assets_backend': [
             'messenger_integration/static/src/js/chatter_refresh.js',
-            'messenger_integration/static/src/js/form_view.js',
         ],
     },
     # always loaded
