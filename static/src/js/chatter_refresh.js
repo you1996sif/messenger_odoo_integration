@@ -38,15 +38,12 @@
 //         }
 //     },
 // });
-
-/** @odoo-module **/
-
 import { FormController } from "@web/views/form/form_controller";
 import { formView } from "@web/views/form/form_view";
 import { registry } from "@web/core/registry";
 import { patch } from "@web/core/utils/patch";
 
-patch(FormController.prototype, 'AutoRefreshFormController', {
+patch(FormController.prototype, {
     setup() {
         this._super(...arguments);
         this.autoRefreshInterval = 2000; // 2 seconds
