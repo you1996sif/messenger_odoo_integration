@@ -40,52 +40,30 @@
 // });
 
 
-import { registry } from "@web/core/registry";
-import { formView } from "@web/views/form/form_view";
-import { FormController } from "@web/views/form/form_controller";
 import { useEffect } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
 
-class AutoRefreshFormController extends FormController {
-    setup() {
-        super.setup();
-        this.autoRefreshInterval = 2000; // 2 seconds
-        this.autoRefreshIntervalId = null;
-        
-        useEffect(() => {
-            console.log('AutoRefreshFormController mounted');
-            this.startAutoRefresh();
-            return () => {
-                console.log('AutoRefreshFormController will unmount');
-                this.stopAutoRefresh();
-            };
-        });
-    }
+export function useAutoRefresh(refreshInterval = 2000) {
+    const orm = useService("orm");
 
-    startAutoRefresh() {
-        console.log('Starting auto-refresh');
-        if (!this.autoRefreshIntervalId) {
-            this.autoRefreshIntervalId = setInterval(() => {
-                console.log('Auto-refreshing');
-                this.model.root.load();
-                this.render();
-            }, this.autoRefreshInterval);
-        }
-    }
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            console.log('Auto-refreshing');
+            orm.call("mail.message", "get_messages", [], {
+                // You might need to adjust these parameters based on your needs
+                model: this.props.resModel,
+                res_id: this.props.resId,
+                limit: 100,
+            }).then((messages) => {
+                // Update the messages in the chatter
+                // This part depends on how your chatter is implemented
+                // You might need to dispatch an action or update the state
+                console.log('Received new messages:', messages);
+            });
+        }, refreshInterval);
 
-    stopAutoRefresh() {
-        console.log('Stopping auto-refresh');
-        if (this.autoRefreshIntervalId) {
-            clearInterval(this.autoRefreshIntervalId);
-            this.autoRefreshIntervalId = null;
-        }
-    }
+        return () => {
+            clearInterval(intervalId);
+        };
+    });
 }
-
-export const autoRefreshFormView = {
-    ...formView,
-    Controller: AutoRefreshFormController,
-};
-
-registry.category("views").add("auto_refresh_form", autoRefreshFormView);
-
-console.log('Auto-refresh form view module loaded');
