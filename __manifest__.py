@@ -2,7 +2,7 @@
 {
     'name': 'Messenger Integration',
     'version': '1.0',
-    'category': 'Social',
+    'category': 'Discuss',
     'summary': 'Integrate Facebook Messenger with Odoo',
     'description': """
       This module integrates Facebook Messenger with Odoo,
