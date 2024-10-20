@@ -2,31 +2,23 @@
 
 import { FormController } from "@web/views/form/form_controller";
 import { patch } from "@web/core/utils/patch";
-import { useEffect, onWillStart } from "@odoo/owl";
+import { useEffect, useRef } from "@odoo/owl";
 
 patch(FormController.prototype, {
     setup() {
-        const superSetup = this._super;
-        if (superSetup) {
-            superSetup.call(this, ...arguments);
-        }
+        this._super(...arguments);
         
-        onWillStart(() => {
-            this.chatterRefreshSetup();
-        });
-    },
-
-    chatterRefreshSetup() {
+        this.rootRef = useRef('root');
+        
         useEffect(() => {
-            const chatter = this.el && this.el.querySelector('.o_Chatter');
+            const chatter = this.rootRef.el && this.rootRef.el.querySelector('.o_Chatter');
             if (chatter) {
-                chatter.addEventListener('click', this.onSendButtonClick.bind(this));
+                const onSendButtonClick = this.onSendButtonClick.bind(this);
+                chatter.addEventListener('click', onSendButtonClick);
+                return () => {
+                    chatter.removeEventListener('click', onSendButtonClick);
+                };
             }
-            return () => {
-                if (chatter) {
-                    chatter.removeEventListener('click', this.onSendButtonClick.bind(this));
-                }
-            };
         });
     },
 
@@ -37,7 +29,7 @@ patch(FormController.prototype, {
                 if (this.model && this.model.root) {
                     this.model.root.load();
                 }
-                const chatter = this.el && this.el.querySelector('.o_Chatter');
+                const chatter = this.rootRef.el && this.rootRef.el.querySelector('.o_Chatter');
                 if (chatter) {
                     const messageList = chatter.querySelector('.o_Chatter_scrollPanel');
                     if (messageList) {
