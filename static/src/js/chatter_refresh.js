@@ -41,48 +41,34 @@
 
 /** @odoo-module **/
 
-/** @odoo-module **/
-
 import { FormController } from "@web/views/form/form_controller";
 import { formView } from "@web/views/form/form_view";
 import { registry } from "@web/core/registry";
 import { patch } from "@web/core/utils/patch";
-import { useEffect } from "@odoo/owl";
 
-class AutoRefreshFormController extends FormController {
+patch(FormController.prototype, 'AutoRefreshFormController', {
     setup() {
-        super.setup();
-        
+        this._super(...arguments);
         this.autoRefreshInterval = 2000; // 2 seconds
         this.autoRefreshIntervalId = null;
-
-        useEffect(() => {
-            console.log('AutoRefreshFormController mounted');
-            this.startAutoRefresh();
-            return () => {
-                console.log('AutoRefreshFormController will unmount');
-                this.stopAutoRefresh();
-            };
-        });
-    }
+        this.env.bus.on('ROUTE_CHANGE', this, this.stopAutoRefresh);
+        this.env.bus.on('FORM_VIEW_RENDERED', this, this.startAutoRefresh);
+    },
 
     startAutoRefresh() {
-        console.log('Starting auto-refresh');
         if (!this.autoRefreshIntervalId) {
             this.autoRefreshIntervalId = setInterval(() => {
-                console.log('Auto-refreshing');
                 this.refreshChatter();
             }, this.autoRefreshInterval);
         }
-    }
+    },
 
     stopAutoRefresh() {
-        console.log('Stopping auto-refresh');
         if (this.autoRefreshIntervalId) {
             clearInterval(this.autoRefreshIntervalId);
             this.autoRefreshIntervalId = null;
         }
-    }
+    },
 
     refreshChatter() {
         if (this.model && this.model.root) {
@@ -95,17 +81,21 @@ class AutoRefreshFormController extends FormController {
                 }
             }
         }
-    }
-}
+    },
 
-// Define the new form view
+    destroy() {
+        this.stopAutoRefresh();
+        this.env.bus.off('ROUTE_CHANGE', this, this.stopAutoRefresh);
+        this.env.bus.off('FORM_VIEW_RENDERED', this, this.startAutoRefresh);
+        this._super(...arguments);
+    },
+});
+
+// Extend the form view to use our patched FormController
 const autoRefreshFormView = {
     ...formView,
-    Controller: AutoRefreshFormController,
+    Controller: FormController,
 };
 
 // Register the new form view
 registry.category("views").add("auto_refresh_form", autoRefreshFormView);
-
-// Patch the original FormController for backwards compatibility
-patch(FormController.prototype, AutoRefreshFormController.prototype);
