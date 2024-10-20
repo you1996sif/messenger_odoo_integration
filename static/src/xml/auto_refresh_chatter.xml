@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<!-- <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="messenger_integration.AutoRefreshChatter" owl="1">
         <div class="o_AutoRefreshChatter">
@@ -11,4 +11,4 @@
             </t>
         </div>
     </t>
-</templates>
+</templates> -->

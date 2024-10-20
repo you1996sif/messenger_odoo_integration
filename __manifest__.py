@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 {
-    'name': 'Messenger Integration',
+    'name': 'asd Messenger Integration',
     'version': '1.0',
     'category': 'Discuss',
     'summary': 'Integrate Facebook Messenger with Odoo',
@@ -11,7 +11,7 @@
   'author': 'Yousif Basil',
     'website': "https://www.yourcompany.com",
 
-    'depends': ['base', 'web', 'contacts', 'mail', 'web'],
+    'depends': ['base', 'web', 'contacts', 'mail', 'web', 'sale'],
     # 'assets': {
     #     'web.assets_backend': [
     #         'messenger_integration/static/src/js/chatter_refresh.js',
@@ -24,6 +24,7 @@
         'views/privacy_policy_templates.xml',
         'views/facebook_conversation_views.xml',
         'views/facebook_user_conversation_views.xml',
+        'wizards/create_sale_order_wizard_views.xml',
 
     ],
     'installable': True,

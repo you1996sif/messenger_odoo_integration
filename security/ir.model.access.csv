@@ -2,3 +2,5 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_messenger_message,messenger_message,model_messenger_message,,1,1,1,1
 access_facebook_conversation,facebook_conversation,model_facebook_conversation,,1,1,1,1
 access_facebook_user_conversation_manager,facebook.user.conversation.manager,model_facebook_user_conversation,base.group_system,1,1,1,1
+access_create_sale_order_wizard,access.create.sale.order.wizard,model_create_sale_order_wizard,base.group_user,1,1,1,1
+access_create_sale_order_line_wizard,access.create.sale.order.line.wizard,model_create_sale_order_line_wizard,base.group_user,1,1,1,1

@@ -26,8 +26,22 @@ class FacebookUserConversation(models.Model):
         ('archived', 'Archived')
     ], default='active', string='Status')
     message_ids = fields.One2many('facebook_conversation', 'user_conversation_id', string='Messages')
+    sale_order_ids = fields.One2many('sale.order', 'partner_id', string='Sale Orders', related='partner_id.sale_order_ids')
 
 
+
+    def action_open_create_sale_order_wizard(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Create Sale Order',
+            'res_model': 'create.sale.order.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {'default_partner_id': self.partner_id.id},
+        }
+        
+        
     def name_get(self):
         return [(rec.id, f"{rec.partner_id.name} - Facebook Chat") for rec in self]
 

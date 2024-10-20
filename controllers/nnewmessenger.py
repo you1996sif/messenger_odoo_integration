@@ -168,12 +168,17 @@ class FacebookWebhookController(http.Controller):
         # Strip HTML tags from the message
         clean_message = self.strip_html(message.get('text', ''))
         _logger.info('cleeeeeeeeeeeeeeeeeeeeeeaned')
+        message_id = message.get('mid')
         
-        
-        if clean_message:  # Only process if there's actual content
+        if clean_message and message_id:  # Only process if there's actual content
             _logger.info('iffffffffff cleeeeeeeeeeeeeeeeeeeeeeaned')
-            
-            conversation.add_message_to_chatter(clean_message, 'customer')
+            existing_message = request.env['facebook_conversation'].sudo().search([('message_id', '=', message_id)], limit=1)
+            if not existing_message:
+                conversation.add_message_to_chatter(clean_message, 'customer', message_id)
+            else:
+                _logger.info(f'Duplicate message detected and skipped: {message_id}')
+                
+                conversation.add_message_to_chatter(clean_message, 'customer')
             _logger.info('connnnnnnn cleeeeeeeeeeeeeeeeeeeeeeaned')
         # Create Facebook conversation message
        # facebook_message = request.env['facebook_conversation'].sudo().create({
