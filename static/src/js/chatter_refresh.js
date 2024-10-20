@@ -4,9 +4,10 @@ import { FormController } from "@web/views/form/form_controller";
 import { patch } from "@web/core/utils/patch";
 import { useEffect, useRef } from "@odoo/owl";
 
-patch(FormController.prototype, {
+patch(FormController.prototype, 'ChatterRefreshFormController', {
     setup() {
-        this._super(...arguments);
+        const originalSetup = FormController.prototype.setup;
+        originalSetup.call(this, ...arguments);
         
         this.rootRef = useRef('root');
         
