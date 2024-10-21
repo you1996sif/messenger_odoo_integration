@@ -27,8 +27,25 @@ class FacebookUserConversation(models.Model):
     ], default='active', string='Status')
     message_ids = fields.One2many('facebook_conversation', 'user_conversation_id', string='Messages')
     sale_order_ids = fields.One2many('sale.order', 'partner_id', string='Sale Orders', related='partner_id.sale_order_ids')
-
-
+    order_line_ids = fields.One2many('sale.order.line', compute='_compute_order_lines')
+    
+    
+    street = fields.Char(related='partner_id.street', string='Street', readonly=False)
+    street2 = fields.Char(related='partner_id.street2', string='Street 2', readonly=False)
+    state_id = fields.Many2one(related='partner_id.state_id', string='State', readonly=False)
+    city = fields.Char(related='partner_id.city', string='City', readonly=False)
+    zip = fields.Char(related='partner_id.zip', string='ZIP', readonly=False)
+    country_id = fields.Many2one(related='partner_id.country_id', string='Country', readonly=False)
+    phone = fields.Char(related='partner_id.phone', string='Phone', readonly=False)
+    mobile = fields.Char(related='partner_id.mobile', string='Mobile', readonly=False)
+    email = fields.Char(related='partner_id.email', string='Email', readonly=False)
+    website = fields.Char(related='partner_id.website', string='Website', readonly=False)
+    lang = fields.Selection(related='partner_id.lang', string='Language', readonly=False)
+    category_id = fields.Many2many(related='partner_id.category_id', string='Tags', readonly=False)
+    # category_id = fields.Many2many(related='partner_id.state', string='state', readonly=False)
+    # district_idd = fields.Many2many(related='partner_id.district_id', string='district', readonly=False)
+    district_id = fields.Many2one(related='partner_id.district_id', string='District', readonly=False)
+    # birth_date = fields.Date(related='partner_id.birth_date', string='Birth Date', readonly=False)
 
     def action_open_create_sale_order_wizard(self):
         self.ensure_one()
@@ -40,6 +57,52 @@ class FacebookUserConversation(models.Model):
             'target': 'new',
             'context': {'default_partner_id': self.partner_id.id},
         }
+    @api.depends('sale_order_ids.order_line')
+    def _compute_order_lines(self):
+        for record in self:
+            record.order_line_ids = record.sale_order_ids.mapped('order_line')
+    
+        
+        
+        
+    def action_add_sale_order(self):
+        return {
+            'name': _('Add Sale Order'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'sale.order',
+            'view_mode': 'form',
+            'context': {
+                'default_partner_id': self.partner_id.id,
+                'default_origin': f'Facebook Conversation: {self.id}',
+            },
+            'target': 'new',
+        }
+
+    def action_add_order_line(self):
+        if not self.sale_order_ids:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('No Sale Order'),
+                    'message': _('Please create a sale order first.'),
+                    'type': 'warning',
+                }
+            }
+        return {
+            'name': _('Add Order Line'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'sale.order.line',
+            'view_mode': 'form',
+            'context': {
+                'default_order_id': self.sale_order_ids[0].id,
+            },
+            'target': 'new',
+        }
+        
+        
+        
+        
         
         
     def name_get(self):

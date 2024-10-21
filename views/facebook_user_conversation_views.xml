@@ -12,10 +12,30 @@
                     </header>
                     <sheet>
                         <group>
-                            <field name="partner_id"/>
-                            <field name="facebook_id"/>
-                            <field name="last_message_date"/>
-                            <field name="conversation_status"/>
+                            <group>
+                                <field name="partner_id"/>
+                                <field name="facebook_id"/>
+                                <field name="last_message_date"/>
+                                <field name="conversation_status"/>
+                            </group>
+                            <group>
+                                <field name="street" string="Street"/>
+                                <field name="street2" string="Street 2"/>
+                                <field name="state_id" string="State"/>
+                                <field name="district_id" string="District"/>
+                                <field name="city" string="City"/>
+                                <field name="zip" string="ZIP"/>
+                                <field name="country_id" string="Country"/>
+                            </group>
+                            <group>
+                                <field name="phone" string="Phone"/>
+                                <field name="mobile" string="Mobile"/>
+                                <field name="email" string="Email"/>
+                                <field name="website" string="Website"/>
+                                <field name="lang" string="Language"/>
+                                <field name="category_id" string="Tags" widget="many2many_tags"/>
+                                <!-- <field name="birth_date" string="Birth Date"/> -->
+                            </group>
                         </group>
                         <notebook>
                             <page string="Conversation">
@@ -28,12 +48,26 @@
                                 </field>
                             </page>
                             <page string="Sale Orders">
+                                <button name="action_add_sale_order" string="Add Sale Order" type="object" class="btn-secondary"/>
                                 <field name="sale_order_ids">
-                                    <tree>
+                                    <tree editable="bottom">
                                         <field name="name"/>
                                         <field name="date_order"/>
                                         <field name="state"/>
                                         <field name="amount_total"/>
+                                    </tree>
+                                </field>
+                            </page>
+                            <page string="Order Lines">
+                                <button name="action_add_order_line" string="Add Order Line" type="object" class="btn-secondary"/>
+                                <field name="order_line_ids" context="{'default_order_id': active_id}">
+                                    <tree editable="bottom">
+                                        <field name="order_id"/>
+                                        <field name="product_id"/>
+                                        <field name="name"/>
+                                        <field name="product_uom_qty"/>
+                                        <field name="price_unit"/>
+                                        <field name="price_subtotal" sum="Total"/>
                                     </tree>
                                 </field>
                             </page>
@@ -46,7 +80,6 @@
                 </form>
             </field>
         </record>
-
         <record id="view_facebook_user_conversation_tree" model="ir.ui.view">
             <field name="name">facebook.user.conversation.tree</field>
             <field name="model">facebook.user.conversation</field>

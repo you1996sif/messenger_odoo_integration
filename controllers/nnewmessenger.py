@@ -5,6 +5,7 @@ import json
 import urllib.parse
 import requests
 import re
+import uuid
 
 _logger = logging.getLogger(__name__)
 
@@ -178,7 +179,7 @@ class FacebookWebhookController(http.Controller):
             else:
                 _logger.info(f'Duplicate message detected and skipped: {message_id}')
                 
-                conversation.add_message_to_chatter(clean_message, 'customer')
+                # conversation.add_message_to_chatter(clean_message, 'customer')
             _logger.info('connnnnnnn cleeeeeeeeeeeeeeeeeeeeeeaned')
         # Create Facebook conversation message
        # facebook_message = request.env['facebook_conversation'].sudo().create({
@@ -285,7 +286,15 @@ class FacebookWebhookController(http.Controller):
             _logger.warning(f"Attempted to send empty message to partner {partner_id}")
             return False
         
+        existing_message = env['facebook_conversation'].sudo().search([
+            ('partner_id', '=', partner_id),
+            ('message', '=', clean_message),
+            ('sender', '=', 'odoo')
+        ], limit=1)
         
+        if existing_message:
+            _logger.info(f"Message already sent to partner {partner_id}: {clean_message}")
+            return True
         _logger.info(f"Attempting to send message to partner {partner_id}: {clean_message}")
         partner = env['res.partner'].sudo().browse(partner_id)
         if not partner.facebook_id:
@@ -293,11 +302,12 @@ class FacebookWebhookController(http.Controller):
             return False
 
         # Your Facebook page access token
-
+        message_id = str(uuid.uuid4())
         url = f'https://graph.facebook.com/v11.0/me/messages?access_token={access_token}'
         payload = {
             'recipient': {'id': partner.facebook_id},
-            'message': {'text': message}
+            'message': {'text': message},
+            'metadata': message_id
         }
         response = requests.post(url, json=payload)
         if response.status_code == 200:
@@ -310,6 +320,7 @@ class FacebookWebhookController(http.Controller):
                     'sender': 'odoo',
                     'odoo_user_id': env.user.id,
                     'message_type': 'comment',
+                    'message_id': message_id,
                 })
                 # Update the last_message_date of the conversation
                 conversation.sudo().write({'last_message_date': fields.Datetime.now()})
