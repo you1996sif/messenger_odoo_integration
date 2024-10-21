@@ -237,23 +237,23 @@ class FacebookUserConversation(models.Model):
         
     def add_message_to_chatter(self, message_text, sender, message_id=False):
         _logger.info(' add_message_to_chatter add_message_to_chatter add_message_to_chatter add_message_to_chatter add_message_to_chatter')
-        self.message_post(
+        self.with_context(from_facebook=True).message_post(
             body=message_text,
             message_type='comment',
             subtype_xmlid='mail.mt_comment',
             author_id=self.partner_id.id if sender == 'customer' else self.env.user.partner_id.id,
         )
         _logger.info('self.message_postself.message_postself.message_postself.message_postself.message_post')
-        
-        self.env['facebook_conversation'].sudo().create({
-            'user_conversation_id': self.id,
-            'partner_id': self.partner_id.id,
-            'message': message_text,
-            'sender': sender,
-            'odoo_user_id': self.env.user.id if sender == 'odoo' else False,
-            'message_type': 'comment',
-            'message_id': message_id,
-        })
+        if not self.env.context.get('from_facebook'):
+            self.env['facebook_conversation'].sudo().create({
+                'user_conversation_id': self.id,
+                'partner_id': self.partner_id.id,
+                'message': message_text,
+                'sender': sender,
+                'odoo_user_id': self.env.user.id if sender == 'odoo' else False,
+                'message_type': 'comment',
+                'message_id': message_id,
+            })
         _logger.info('self.facebook_conversation.facebook_conversation.facebook_conversation.facebook_conversation.message_post')
 
         self.write({'last_message_date': fields.Datetime.now()})

@@ -159,6 +159,10 @@ class FacebookWebhookController(http.Controller):
         _logger.info('dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd')
         message = event['message']
         sender_id = event['sender']['id']
+        if sender_id == '110208201788618':  # Replace with your actual page ID
+            _logger.info(f'Ignoring message from our own page: {message}')
+            return True
+        
         _logger.info(f'Received message: {message} from {sender_id}')
 
         user_profile = self._get_user_profile(sender_id)
@@ -175,7 +179,8 @@ class FacebookWebhookController(http.Controller):
             _logger.info('iffffffffff cleeeeeeeeeeeeeeeeeeeeeeaned')
             existing_message = request.env['facebook_conversation'].sudo().search([('message_id', '=', message_id)], limit=1)
             if not existing_message:
-                conversation.add_message_to_chatter(clean_message, 'customer', message_id)
+                # conversation.add_message_to_chatter(clean_message, 'customer', message_id)
+                conversation.with_context(from_facebook=True).add_message_to_chatter(clean_message, 'customer', message_id)
             else:
                 _logger.info(f'Duplicate message detected and skipped: {message_id}')
                 
@@ -275,6 +280,9 @@ class FacebookWebhookController(http.Controller):
     def send_facebook_message(self, partner_id, message, env=None):
         if env is None:
             env = request.env
+        if env.context.get('from_facebook'):
+            _logger.info(f"Skipping send for incoming message: {message}")
+            return True
         partner = env['res.partner'].sudo().browse(partner_id)
         if not partner.facebook_id:
             _logger.error(f"No Facebook ID found for partner {partner_id}")
