@@ -110,8 +110,10 @@ class FacebookWebhookController(http.Controller):
             _logger.info(f'Received data: {data}')
 
             for entry in data.get('entry', []):
+                _logger.info(f'entry: {entry}')
                 self._process_entry(entry)
 
+            _logger.info('returning 200:')
             return Response("OK", status=200)
         except Exception as e:
             _logger.exception(f'Error in _handle_webhook_event: {str(e)}')
@@ -124,17 +126,21 @@ class FacebookWebhookController(http.Controller):
         Each entry can contain multiple types of events (messages, changes, etc.).
         """
         if 'changes' in entry:
+            _logger.info('changes')
+            
             for change in entry['changes']:
                 field = change.get('field')
                 value = change.get('value')
                 if field:
                     method_name = f'_handle_{field}'
                     if hasattr(self, method_name):
+                    
                         getattr(self, method_name)(value)
                     else:
                         _logger.warning(f'No handler for field: {field}')
 
         if 'messaging' in entry:
+            _logger.info('messagingggggggggggg')
             for event in entry['messaging']:
                 self._handle_messaging_event(event)
 
@@ -142,13 +148,18 @@ class FacebookWebhookController(http.Controller):
         """
         Handles messaging-related events like messages, postbacks, delivery confirmations, and read receipts.
         """
+        _logger.info('_handle_messaging_eventtttttttttt')
         if 'message' in event:
             self._handle_messages(event)
+            _logger.info("'message'in event:")
         elif 'postback' in event:
+            _logger.info(" elif 'postback' in event:")
             self._handle_messaging_postbacks(event)
         elif 'delivery' in event:
+            _logger.info(" eelif 'delivery' in event:")
             self._handle_message_deliveries(event)
         elif 'read' in event:
+            _logger.info("elif 'read' in event:")
             self._handle_message_reads(event)
 
     def _handle_messages(self, event):
