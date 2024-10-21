@@ -159,9 +159,16 @@ class FacebookWebhookController(http.Controller):
         _logger.info('dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd')
         message = event['message']
         sender_id = event['sender']['id']
-        if sender_id == '110208201788618':  # Replace with your actual page ID
-            _logger.info(f'Ignoring message from our own page: {message}')
-            return True
+        # messaging = event['messaging']['sender']['id']
+        # message
+        
+        
+        
+        
+        
+        # if not message:  # Replace with your actual page ID
+        #     _logger.info(f'Ignoring message from our own page: {message}')
+        #     return True
         
         _logger.info(f'Received message: {message} from {sender_id}')
 
