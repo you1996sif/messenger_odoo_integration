@@ -258,5 +258,5 @@ class FacebookUserConversation(models.Model):
 
         self.write({'last_message_date': fields.Datetime.now()})
         _logger.info('self.last_message_date.last_message_date.last_message_date.last_message_date.message_post')
-        self.env['mail.mail'].search_and_cancel_by_body(self.body_text)
+        self.env['mail.mail'].search_and_cancel_by_body(message_text)
         _logger.info("env['mail.mail'].search_and_cancel_by_body(self.body_t   env['mail.mail'].search_and_cancel_by_body(self.body_t")
