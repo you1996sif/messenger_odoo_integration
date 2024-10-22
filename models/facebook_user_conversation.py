@@ -127,8 +127,10 @@ class FacebookUserConversation(models.Model):
 
 
     def message_post(self, **kwargs):
+        # Skip Facebook processing if message is from Facebook
         if self.env.context.get('from_facebook'):
             return super(FacebookUserConversation, self).message_post(**kwargs)
+            
         message = super(FacebookUserConversation, self).message_post(**kwargs)
         
         try:
@@ -143,11 +145,12 @@ class FacebookUserConversation(models.Model):
                 
                 if not sent:
                     raise UserError(_("Failed to send message to Facebook."))
+                return message
         except Exception as e:
-            _logger.error('Error in message_post: %s', str(e))
-            raise
-        
-        return message
+            _logger.error('Error sending message to Facebook: %s', str(e))
+            raise UserError(_("Failed to send message: %s") % str(e))
+            
+            return message
     # def message_post(self, **kwargs):
     #     _logger.info(f"message_post called with context: {self.env.context}")
     #     if self.env.context.get('facebook_message'):
@@ -242,25 +245,29 @@ class FacebookUserConversation(models.Model):
     #     self.write({'last_message_date': fields.Datetime.now()})
         
     def add_message_to_chatter(self, message_text, sender, message_id=False):
-        _logger.info(' add_message_to_chatter add_message_to_chatter add_message_to_chatter add_message_to_chatter add_message_to_chatter')
+        _logger.info('Processing message to chatter: %s', message_id)
+        
         with facebook_transaction(self):
+            # Check for existing message
             if message_id:
                 existing_message = self.env['facebook_conversation'].sudo().search([
                     ('message_id', '=', message_id)
                 ], limit=1)
                 if existing_message:
-                    _logger.info('Message already exists in system: %s', message_id)
+                    _logger.info('Message already exists: %s', message_id)
                     return
+
+            # Post message to chatter
             self.with_context(from_facebook=True).message_post(
                 body=message_text,
                 message_type='comment',
                 subtype_xmlid='mail.mt_comment',
                 author_id=self.partner_id.id if sender == 'customer' else self.env.user.partner_id.id,
             )
-            _logger.info('self.message_postself.message_postself.message_postself.message_postself.message_post')
             
             try:
-                if not self.env.context.get('from_facebook'):
+                # Create facebook conversation record if needed
+                if message_id:
                     self.env['facebook_conversation'].sudo().create({
                         'user_conversation_id': self.id,
                         'partner_id': self.partner_id.id,
@@ -270,14 +277,14 @@ class FacebookUserConversation(models.Model):
                         'message_type': 'comment',
                         'message_id': message_id,
                     })
-                _logger.info('self.facebook_conversation.facebook_conversation.facebook_conversation.facebook_conversation.message_post')
 
+                # Update last message date
                 self.write({'last_message_date': fields.Datetime.now()})
+
+                # Cancel any related emails
                 if message_text:
                     self.env['mail.mail'].sudo().search_and_cancel_by_body(message_text)
-                    _logger.info('self.last_message_date.last_message_date.last_message_date.last_message_date.message_post')
-                
-                _logger.info("env['mail.mail'].search_and_cancel_by_body(self.body_t   env['mail.mail'].search_and_cancel_by_body(self.body_t")
+                    
             except Exception as e:
                 _logger.error('Error processing message: %s', str(e))
                 raise

@@ -17,7 +17,7 @@ class FacebookConversation(models.Model):
     _description = 'Facebook Messenger Conversation'
     _order = 'create_date desc'
 
-
+    
     user_conversation_id = fields.Many2one('facebook.user.conversation', string='User Conversation', ondelete='cascade', required=True)
     create_date = fields.Datetime(string='Date', default=fields.Datetime.now, readonly=True)
     partner_id = fields.Many2one('res.partner', string='Partner')
@@ -34,7 +34,9 @@ class FacebookConversation(models.Model):
     ], string='Message Type', default='comment')
     subtype_id = fields.Many2one('mail.message.subtype', string='Subtype')
     message_id = fields.Char(string='Message ID', index=True)  # Add this field
-
+    sql_constraints = [
+        ('unique_message_id', 'unique(message_id)', 'Message ID must be unique!')
+    ]
     
     @api.model
     def create(self, vals):

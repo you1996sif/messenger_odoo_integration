@@ -164,70 +164,42 @@ class FacebookWebhookController(http.Controller):
 
     def _handle_messages(self, event):
         """
-        Handles incoming messages from the Facebook webhook, checks if the customer exists,
-        and either communicates via Chatter or adds a new partner.
+        Handles incoming messages from Facebook webhook.
         """
-        _logger.info('dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd')
-        message = event['message']
-        sender_id = event['sender']['id']
-        # messaging = event['messaging']['sender']['id']
-        # message
-        
-        
-        
-        
-        
-        # if not message:  # Replace with your actual page ID
-        #     _logger.info(f'Ignoring message from our own page: {message}')
-        #     return True
-        
-        _logger.info(f'Received message: {message} from {sender_id}')
-
-        user_profile = self._get_user_profile(sender_id)
-        partner = self._get_or_create_partner(user_profile)
-        conversation = request.env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
-        
-        _logger.info('cleeeeeeeeeeeeeeeeeeeeeean')
-        # Strip HTML tags from the message
-        clean_message = self.strip_html(message.get('text', ''))
-        _logger.info('cleeeeeeeeeeeeeeeeeeeeeeaned')
-        message_id = message.get('mid')
-        
-        if clean_message and message_id:  # Only process if there's actual content
-            _logger.info('iffffffffff cleeeeeeeeeeeeeeeeeeeeeeaned')
-            existing_message = request.env['facebook_conversation'].sudo().search([('message_id', '=', message_id)], limit=1)
-            if not existing_message:
-                # conversation.add_message_to_chatter(clean_message, 'customer', message_id)
-                conversation.with_context(from_facebook=True).add_message_to_chatter(clean_message, 'customer', message_id)
-            else:
-                _logger.info(f'Duplicate message detected and skipped: {message_id}')
+        try:
+            message = event.get('message', {})
+            sender_id = event['sender']['id']
+            
+            # Skip if message is from our page
+            if sender_id == '110208201788618':  # Your page ID
+                return True
                 
-                # conversation.add_message_to_chatter(clean_message, 'customer')
-            _logger.info('connnnnnnn cleeeeeeeeeeeeeeeeeeeeeeaned')
-        # Create Facebook conversation message
-       # facebook_message = request.env['facebook_conversation'].sudo().create({
-         #   'user_conversation_id': conversation.id,
-           # 'partner_id': partner.id,
-          #  'message': clean_message,
-         #   'sender': 'customer',
-        #    'message_type': 'comment',
-       # })
-        
-        # Post message to the conversation's chatter
-        #conversation.with_context(from_facebook=True).message_post(
-           # body = clean_message,
-          #  message_type='comment',
-         #   subtype_xmlid='mail.mt_comment'
-        #)
+            message_id = message.get('mid')
+            text = message.get('text', '')
+            
+            if not message_id or not text:
+                _logger.info('Skipping message without ID or text')
+                return True
 
-        # Store the message in the `messenger_message` model (if you still need this)
-        #request.env['messenger_message'].sudo().create({
-          #  'name': message.get('mid'),
-         #   'text': message.get('text', ''),
-          #  'sender_id': sender_id,
-        #})
-
-        return True
+            _logger.info('Processing message: %s from %s', message_id, sender_id)
+            
+            user_profile = self._get_user_profile(sender_id)
+            partner = self._get_or_create_partner(user_profile)
+            conversation = request.env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
+            
+            clean_message = self.strip_html(text)
+            if clean_message:
+                conversation.with_context(from_facebook=True).add_message_to_chatter(
+                    clean_message, 
+                    'customer', 
+                    message_id
+                )
+                
+            return True
+            
+        except Exception as e:
+            _logger.error("Error processing Facebook message: %s", str(e))
+            return False
 
     def _get_or_create_partner(self, user_profile):
         Partner = request.env['res.partner'].sudo()
