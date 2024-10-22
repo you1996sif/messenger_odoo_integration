@@ -39,9 +39,20 @@ class MailMail(models.Model):
         
     @api.model
     def search_and_cancel_by_body(self, body_text):
-        emails = self.search([('body_html', 'ilike', body_text), ('state', 'in', ['outgoing', 'ready'])])
-        if emails:
-            cancelled_count = emails.write({'state': 'cancel'})
-            _logger.info(f"{cancelled_count} email(s) cancelled with body containing: {body_text}")
-        else:
-            _logger.info(f"No emails found to cancel with body containing: {body_text}")
+        if not body_text:
+            return
+        try:
+            # Search for emails containing the given text in the body
+            emails = self.search([
+                ('body_html', 'ilike', body_text),
+                ('state', 'in', ['outgoing', 'ready'])
+            ])
+            
+            if emails:
+                emails.write({'state': 'cancel'})
+                _logger.info("Cancelled %d email(s) with body containing: %s", len(emails), body_text)
+            else:
+                _logger.info("No emails found to cancel with body containing: %s", body_text)
+                
+        except Exception as e:
+            _logger.error("Error in search_and_cancel_by_body: %s", str(e))

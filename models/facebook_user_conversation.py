@@ -1,12 +1,10 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
-
 from odoo.http import request, Response
-
 from ..controllers.nnewmessenger import FacebookWebhookController  
-
-
 import logging
+from contextlib import contextmanager
+
 
 _logger = logging.getLogger(__name__)
 
@@ -129,17 +127,25 @@ class FacebookUserConversation(models.Model):
 
 
     def message_post(self, **kwargs):
+        if self.env.context.get('from_facebook'):
+            return super(FacebookUserConversation, self).message_post(**kwargs)
         message = super(FacebookUserConversation, self).message_post(**kwargs)
         
-        # Send the message to Facebook only if it's not coming from Facebook
-        if not self.env.context.get('from_facebook'):
+        try:
             controller = FacebookWebhookController()
             clean_body = controller.strip_html(message.body)
             if clean_body:
-                sent = controller.send_facebook_message(self.partner_id.id, clean_body, env=self.env)
+                sent = controller.send_facebook_message(
+                    self.partner_id.id,
+                    clean_body,
+                    env=self.env
+                )
                 
                 if not sent:
                     raise UserError(_("Failed to send message to Facebook."))
+        except Exception as e:
+            _logger.error('Error in message_post: %s', str(e))
+            raise
         
         return message
     # def message_post(self, **kwargs):
@@ -237,26 +243,51 @@ class FacebookUserConversation(models.Model):
         
     def add_message_to_chatter(self, message_text, sender, message_id=False):
         _logger.info(' add_message_to_chatter add_message_to_chatter add_message_to_chatter add_message_to_chatter add_message_to_chatter')
-        self.with_context(from_facebook=True).message_post(
-            body=message_text,
-            message_type='comment',
-            subtype_xmlid='mail.mt_comment',
-            author_id=self.partner_id.id if sender == 'customer' else self.env.user.partner_id.id,
-        )
-        _logger.info('self.message_postself.message_postself.message_postself.message_postself.message_post')
-        if not self.env.context.get('from_facebook'):
-            self.env['facebook_conversation'].sudo().create({
-                'user_conversation_id': self.id,
-                'partner_id': self.partner_id.id,
-                'message': message_text,
-                'sender': sender,
-                'odoo_user_id': self.env.user.id if sender == 'odoo' else False,
-                'message_type': 'comment',
-                'message_id': message_id,
-            })
-        _logger.info('self.facebook_conversation.facebook_conversation.facebook_conversation.facebook_conversation.message_post')
+        with facebook_transaction(self):
+            if message_id:
+                existing_message = self.env['facebook_conversation'].sudo().search([
+                    ('message_id', '=', message_id)
+                ], limit=1)
+                if existing_message:
+                    _logger.info('Message already exists in system: %s', message_id)
+                    return
+            self.with_context(from_facebook=True).message_post(
+                body=message_text,
+                message_type='comment',
+                subtype_xmlid='mail.mt_comment',
+                author_id=self.partner_id.id if sender == 'customer' else self.env.user.partner_id.id,
+            )
+            _logger.info('self.message_postself.message_postself.message_postself.message_postself.message_post')
+            
+            try:
+                if not self.env.context.get('from_facebook'):
+                    self.env['facebook_conversation'].sudo().create({
+                        'user_conversation_id': self.id,
+                        'partner_id': self.partner_id.id,
+                        'message': message_text,
+                        'sender': sender,
+                        'odoo_user_id': self.env.user.id if sender == 'odoo' else False,
+                        'message_type': 'comment',
+                        'message_id': message_id,
+                    })
+                _logger.info('self.facebook_conversation.facebook_conversation.facebook_conversation.facebook_conversation.message_post')
 
-        self.write({'last_message_date': fields.Datetime.now()})
-        _logger.info('self.last_message_date.last_message_date.last_message_date.last_message_date.message_post')
-        self.env['mail.mail'].search_and_cancel_by_body(message_text)
-        _logger.info("env['mail.mail'].search_and_cancel_by_body(self.body_t   env['mail.mail'].search_and_cancel_by_body(self.body_t")
+                self.write({'last_message_date': fields.Datetime.now()})
+                if message_text:
+                    self.env['mail.mail'].sudo().search_and_cancel_by_body(message_text)
+                    _logger.info('self.last_message_date.last_message_date.last_message_date.last_message_date.message_post')
+                
+                _logger.info("env['mail.mail'].search_and_cancel_by_body(self.body_t   env['mail.mail'].search_and_cancel_by_body(self.body_t")
+            except Exception as e:
+                _logger.error('Error processing message: %s', str(e))
+                raise
+    
+@contextmanager
+def facebook_transaction(self):
+    """Context manager for handling Facebook-related transactions."""
+    try:
+        with self.env.cr.savepoint():
+            yield
+    except Exception as e:
+        _logger.error("Facebook transaction error: %s", str(e))
+        raise UserError(_("Failed to process Facebook message: %s") % str(e))
