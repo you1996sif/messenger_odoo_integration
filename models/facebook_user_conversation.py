@@ -18,6 +18,7 @@ class FacebookUserConversation(models.Model):
 
     partner_id = fields.Many2one('res.partner', string='العميل', required=True)
     facebook_id = fields.Char(related='partner_id.facebook_id', string='ID', store=True)
+    note = fields.Char( string='ملاحظات')
     last_message_date = fields.Datetime(string='Last Message Date')
     conversation_status = fields.Selection([
         ('active', 'Active'),
@@ -28,23 +29,20 @@ class FacebookUserConversation(models.Model):
     order_line_ids = fields.One2many('sale.order.line', compute='_compute_order_lines')
     
     
-    street = fields.Char(related='partner_id.street', string='Street', readonly=False)
+    street = fields.Char(related='partner_id.street', string='Street', readonly=False, required=True)
     street2 = fields.Char(related='partner_id.street2', string='Street 2', readonly=False)
-    state_id = fields.Many2one(related='partner_id.state_id', string='State', readonly=False)
-    city = fields.Char(related='partner_id.city', string='City', readonly=False)
+    state_id = fields.Many2one(related='partner_id.state_id', string='State', readonly=False, required=True)
+    city = fields.Char(related='partner_id.city', string='City', readonly=False, required=True)
     zip = fields.Char(related='partner_id.zip', string='ZIP', readonly=False)
-    country_id = fields.Many2one(related='partner_id.country_id', string='Country', readonly=False)
-    phone = fields.Char(related='partner_id.phone', string='Phone', readonly=False)
-    mobile = fields.Char(related='partner_id.mobile', string='Mobile', readonly=False)
+    country_id = fields.Many2one(related='partner_id.country_id', string='Country', readonly=False, required=True)
+    phone = fields.Char(related='partner_id.phone', string='Phone', readonly=False, required=True)
+    mobile = fields.Char(related='partner_id.mobile', string='Mobile')
     email = fields.Char(related='partner_id.email', string='Email', readonly=False)
     website = fields.Char(related='partner_id.website', string='Website', readonly=False)
     lang = fields.Selection(related='partner_id.lang', string='Language', readonly=False)
     category_id = fields.Many2many(related='partner_id.category_id', string='Tags', readonly=False)
-    # category_id = fields.Many2many(related='partner_id.state', string='state', readonly=False)
-    # district_idd = fields.Many2many(related='partner_id.district_id', string='district', readonly=False)
-    district_id = fields.Many2one(related='partner_id.district_id', string='District', readonly=False)
-    # birth_date = fields.Date(related='partner_id.birth_date', string='Birth Date', readonly=False)
-
+    district_id = fields.Many2one(related='partner_id.district_id', string='District', readonly=False, required=True)
+  
     def action_open_create_sale_order_wizard(self):
         self.ensure_one()
         return {
