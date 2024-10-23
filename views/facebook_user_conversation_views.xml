@@ -14,6 +14,7 @@
                         <group>
                             <group>
                                 <field name="partner_id"/>
+                                <field name="client_name"/>
                                 <field name="facebook_id"/>
                                 <field name="last_message_date"/>
                                 <field name="conversation_status"/>

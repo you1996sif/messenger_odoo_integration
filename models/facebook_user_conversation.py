@@ -16,8 +16,9 @@ class FacebookUserConversation(models.Model):
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _rec_name = 'partner_id'
 
-    partner_id = fields.Many2one('res.partner', string='العميل', required=True)
+    partner_id = fields.Many2one('res.partner', string='حساب العميل', required=True)
     facebook_id = fields.Char(related='partner_id.facebook_id', string='ID', store=True)
+    client_name = fields.Char(string='اسم العميل ')
     note = fields.Char( string='ملاحظات')
     last_message_date = fields.Datetime(string='Last Message Date')
     conversation_status = fields.Selection([
