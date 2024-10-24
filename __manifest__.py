@@ -30,6 +30,7 @@
         'views/facebook_conversation_views.xml',
         'views/facebook_user_conversation_views.xml',
         'wizards/create_sale_order_wizard_views.xml',
+        'views/assets.xml',
 
     ],
     'installable': True,
