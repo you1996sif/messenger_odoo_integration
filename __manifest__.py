@@ -20,7 +20,12 @@
     # always loaded
     'assets': {
         'web.assets_backend': [
-            '/messenger_integration/static/src/js/conversation.js',
+            '/messenger_integration/static/**/*.js',
+            '/messenger_integration/static/**/*.xml',
+            '/messenger_integration/static/**/*.scss',
+            '/messenger_integration/static/src/js/message_handler_service.js',
+            '/messenger_integration/static/src/js/message_handler.js',
+            '/messenger_integration/static/src/js/message_handler.xml',
            
         ],
     },
