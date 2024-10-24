@@ -182,59 +182,39 @@ class FacebookUserConversation(models.Model):
             self.env.cr.rollback()
             return False
 
-    def message_post(self, **kwargs):
-        """Enhanced message posting with proper bus notifications"""
-        if self.env.context.get('from_facebook'):
-            return super(FacebookUserConversation, self).message_post(**kwargs)
-
-        try:
-            # Create message in chatter
-            message = super(FacebookUserConversation, self).message_post(**kwargs)
-            _logger.info(f"Created chatter message: {message.id}")
-
-            if message and message.body and not self.env.context.get('skip_facebook'):
-                controller = FacebookWebhookController()
-                sent = controller.send_facebook_message(
-                    partner_id=self.partner_id.id,
-                    message=message.body,
-                    env=self.env
-                )
-
-                if sent:
-                    # Notify bus about the new message
-                    self._notify_message_update(message)
-                else:
-                    _logger.error("Failed to send message to Facebook")
-
-            return message
-
-        except Exception as e:
-            _logger.exception(f"Error in message_post: {str(e)}")
-            raise UserError(_("Failed to process message: %s") % str(e))
-
     def _notify_message_update(self, message):
-        """Notify the bus about message updates"""
-        self.ensure_one()
-        notification_data = {
-            'type': 'message_posted',
-            'message': {
-                'id': message.id,
-                'body': message.body,
-                'date': fields.Datetime.to_string(message.date),
-                'author_id': [
-                    message.author_id.id,
-                    message.author_id.display_name
-                ] if message.author_id else False,
-            },
-            'model': self._name,
-            'res_id': self.id,
-        }
-
+        """Send bus notification for message updates"""
         self.env['bus.bus']._sendone(
-            self.env.user.partner_id,
             'mail.message/insert',
-            notification_data
+            {
+                'message': {
+                    'id': message.id,
+                    'model': self._name,
+                    'res_id': self.id,
+                }
+            }
         )
+
+    def message_post(self, **kwargs):
+        message = super().message_post(**kwargs)
+        
+        if message and not self.env.context.get('from_facebook'):
+            try:
+                controller = FacebookWebhookController()
+                if message.body and not self.env.context.get('skip_facebook'):
+                    sent = controller.send_facebook_message(
+                        partner_id=self.partner_id.id,
+                        message=message.body,
+                        env=self.env
+                    )
+                    
+                    if sent:
+                        self._notify_message_update(message)
+                        
+            except Exception as e:
+                _logger.exception("Error in message_post: %s", str(e))
+                
+        return message
 
     def add_message_to_chatter(self, message_text, sender, message_id=False):
         """Handle incoming Facebook messages with proper UI updates"""

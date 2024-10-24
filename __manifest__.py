@@ -20,9 +20,10 @@
     # always loaded
     'assets': {
         'web.assets_backend': [
-             '/messenger_integration/static/src/components/**/*.js',
+            '/messenger_integration/static/src/core/**/*.js'   ,
+            # Then components
+            '/messenger_integration/static/src/components/**/*.js',
             '/messenger_integration/static/src/components/**/*.xml',
-            '/messenger_integration/static/src/core/**/*.js',
            
            
         ],
