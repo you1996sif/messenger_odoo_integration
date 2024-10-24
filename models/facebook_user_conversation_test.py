@@ -128,117 +128,89 @@ class FacebookUserConversation(models.Model):
 
     
 
-    def send_facebook_message(self, message):
-        self.ensure_one()
+    def send_message_to_facebook(self, message_text):
+        """Separate method to handle Facebook message sending"""
+        _logger.info(f"Sending message to Facebook: {message_text}")
         controller = FacebookWebhookController()
-        clean_message = controller.strip_html(message)
-        if clean_message:
-            sent = controller.send_facebook_message(self.partner_id.id, clean_message, env=self.env)
+        clean_body = controller.strip_html(message_text)
+        
+        if clean_body:
+            message_id = str(uuid.uuid4())
+            sent = controller.send_facebook_message(
+                partner_id=self.partner_id.id,
+                message=clean_body,
+                env=self.env
+            )
+            
             if sent:
-                self.message_post(
-                    body=clean_message,
-                    message_type='comment',
-                    subtype_xmlid='mail.mt_comment',
-                    author_id=self.env.user.partner_id.id,
-                )
+                # Create Facebook conversation record
                 self.env['facebook_conversation'].sudo().create({
                     'user_conversation_id': self.id,
                     'partner_id': self.partner_id.id,
-                    'message': clean_message,
+                    'message': clean_body,
                     'sender': 'odoo',
                     'odoo_user_id': self.env.user.id,
                     'message_type': 'comment',
+                    'message_id': message_id
                 })
-                self.write({'last_message_date': fields.Datetime.now()})
                 return True
-            else:
-                raise UserError(_("Failed to send message to Facebook."))
         return False
-        
-        
-    
-   
-   
-   
-   
-   
-   
-   
-   
-   
+
     def message_post(self, **kwargs):
-        """Override message_post to handle Facebook message sending and chatter updates"""
-        # If message is from Facebook, post directly to chatter
-        if self.env.context.get('from_facebook'):
-            return super(FacebookUserConversation, self).message_post(**kwargs)
-
-        # First create the message in chatter
-        message = super(FacebookUserConversation, self).message_post(**kwargs)
-        
-        if message and message.body and not self.env.context.get('skip_facebook'):
-            try:
-                controller = FacebookWebhookController()
-                clean_body = controller.strip_html(message.body)
-                
-                if clean_body:
-                    # Generate a unique message ID
-                    message_id = str(uuid.uuid4())
-                    
-                    # Send to Facebook
-                    with self.env.cr.savepoint():
-                        sent = controller.send_facebook_message(
-                            partner_id=self.partner_id.id,
-                            message=clean_body,
-                            env=self.env
-                        )
-                        
-                        if sent:
-                            # Create Facebook conversation record
-                            self.env['facebook_conversation'].sudo().create({
-                                'user_conversation_id': self.id,
-                                'partner_id': self.partner_id.id,
-                                'message': clean_body,
-                                'sender': 'odoo',
-                                'odoo_user_id': self.env.user.id,
-                                'message_type': 'comment',
-                                'message_id': message_id
-                            })
-                            
-                            # Update last message date
-                            self.write({
-                                'last_message_date': fields.Datetime.now()
-                            })
-                        else:
-                            raise UserError(_("Failed to send message to Facebook."))
-                            
-            except Exception as e:
-                _logger.error('Error sending message to Facebook: %s', str(e))
-                raise UserError(_("Failed to send message: %s") % str(e))
-        
-        return message
-
-    def add_message_to_chatter(self, message_text, sender, message_id=False):
-        """Handle incoming messages from Facebook"""
-        self.ensure_one()
+        """Handle both chatter and Facebook message posting"""
+        _logger.info("Starting message_post with context: %s", self.env.context)
         
         try:
-            # Check for existing message to avoid duplicates
+            # If this is a Facebook message, just post to chatter
+            if self.env.context.get('from_facebook'):
+                _logger.info("Posting Facebook message to chatter")
+                return super(FacebookUserConversation, self).message_post(**kwargs)
+
+            # For outgoing messages, handle both chatter and Facebook
+            with self.env.cr.savepoint():
+                # First post to chatter
+                message = super(FacebookUserConversation, self).message_post(**kwargs)
+                _logger.info("Created chatter message: %s", message.id if message else 'None')
+
+                if message and message.body and not self.env.context.get('skip_facebook'):
+                    # Send to Facebook
+                    if self.send_message_to_facebook(message.body):
+                        _logger.info("Successfully sent message to Facebook")
+                        # Update last message date
+                        self.write({'last_message_date': fields.Datetime.now()})
+                    else:
+                        _logger.error("Failed to send message to Facebook")
+                        raise UserError(_("Failed to send message to Facebook"))
+
+                return message
+
+        except Exception as e:
+            _logger.exception("Error in message_post: %s", str(e))
+            raise UserError(_("Failed to process message: %s") % str(e))
+
+    def add_message_to_chatter(self, message_text, sender, message_id=False):
+        """Handle incoming Facebook messages"""
+        self.ensure_one()
+        _logger.info("Adding message to chatter: %s, sender: %s, message_id: %s", 
+                    message_text, sender, message_id)
+
+        try:
+            # Check for existing message
             if message_id:
-                existing_message = self.env['facebook_conversation'].sudo().search([
+                existing = self.env['facebook_conversation'].sudo().search([
                     ('message_id', '=', message_id)
                 ], limit=1)
-                
-                if existing_message:
-                    _logger.info('Duplicate message detected: %s', message_id)
+                if existing:
+                    _logger.info("Skipping duplicate message: %s", message_id)
                     return
-            
+
             with self.env.cr.savepoint():
-                # Post to chatter with proper attribution
+                # Post to chatter
                 author_id = self.partner_id.id if sender == 'customer' else self.env.user.partner_id.id
-                
                 message = self.with_context(
                     from_facebook=True,
-                    mail_create_nosubscribe=True
+                    mail_create_nosubscribe=True,
+                    tracking_disable=True
                 ).message_post(
                     body=message_text,
                     message_type='comment',
@@ -246,8 +218,10 @@ class FacebookUserConversation(models.Model):
                     author_id=author_id
                 )
                 
+                _logger.info("Created chatter message with ID: %s", message.id if message else 'None')
+
                 # Create facebook conversation record
-                conversation = self.env['facebook_conversation'].sudo().create({
+                self.env['facebook_conversation'].sudo().create({
                     'user_conversation_id': self.id,
                     'partner_id': self.partner_id.id,
                     'message': message_text,
@@ -256,15 +230,15 @@ class FacebookUserConversation(models.Model):
                     'message_type': 'comment',
                     'message_id': message_id or str(uuid.uuid4())
                 })
-                
+
                 # Update last message date
                 self.write({'last_message_date': fields.Datetime.now()})
                 
-                # Commit the transaction
+                # Ensure changes are committed
                 self.env.cr.commit()
-                
+
         except Exception as e:
-            _logger.error('Error processing Facebook message: %s', str(e))
+            _logger.exception("Error adding message to chatter: %s", str(e))
             self.env.cr.rollback()
             raise UserError(_("Failed to process Facebook message: %s") % str(e))
         
