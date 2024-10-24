@@ -1,30 +1,34 @@
 /** @odoo-module **/
 
-import { registry } from "@web/core/registry";
-import { Component } from "@odoo/owl";
+import { patch } from "@web/core/utils/patch";
+import { ChatterContainer } from "@mail/components/chatter_container/chatter_container";
+import { useService } from "@web/core/utils/hooks";
 
-export class FacebookConversationHandler extends Component {
+patch(ChatterContainer.prototype, {
     setup() {
-        // Get the messaging bus service from the env
-        const bus = this.env.services.bus_service;
-        const messaging = this.env.services.messaging;
+        this._super(...arguments);
+        
+        // Get required services
+        this.rpc = useService("rpc");
+        this.bus = useService("bus_service");
+        
+        // Subscribe to message updates
+        this.bus.subscribe("mail.message/insert", this.onMessageUpdate.bind(this));
+        this.bus.subscribe("mail.message/update", this.onMessageUpdate.bind(this));
+    },
 
-        // Subscribe to message notifications
-        bus.subscribe("mail.message/insert", (payload) => {
-            if (payload && payload.type === "message_posted") {
-                messaging.refresh();
-            }
-        });
+    onMessageUpdate(notification) {
+        if (this.chatter && this.chatter.thread) {
+            this.chatter.thread.fetchData();
+        }
+    },
 
-        bus.subscribe("mail.message/update", (payload) => {
-            if (payload && payload.type === "message_updated") {
-                messaging.refresh();
-            }
-        });
+    async sendMessage(messageData) {
+        const result = await this._super(...arguments);
+        // Force refresh after message is sent
+        if (this.chatter && this.chatter.thread) {
+            await this.chatter.thread.fetchData();
+        }
+        return result;
     }
-}
-
-FacebookConversationHandler.template = "messenger_integration.FacebookConversationHandler";
-
-// Register the component
-registry.category("main_components").add("FacebookConversationHandler", FacebookConversationHandler);
+});
