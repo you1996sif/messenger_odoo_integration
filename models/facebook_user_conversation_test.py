@@ -184,24 +184,25 @@ class FacebookUserConversation(models.Model):
 
     def _notify_message_update(self, message):
         """Send bus notification for message updates"""
-        self.env['bus.bus']._sendone(
-            'mail.message/insert',
-            {
-                'message': {
-                    'id': message.id,
+        channel = f'mail.message/insert'
+        self.env['bus.bus']._sendmany([
+            (channel, {
+                'type': 'message_posted',
+                'payload': {
+                    'message_id': message.id,
                     'model': self._name,
                     'res_id': self.id,
                 }
-            }
-        )
+            })
+        ])
 
     def message_post(self, **kwargs):
         message = super().message_post(**kwargs)
         
         if message and not self.env.context.get('from_facebook'):
             try:
-                controller = FacebookWebhookController()
                 if message.body and not self.env.context.get('skip_facebook'):
+                    controller = FacebookWebhookController()
                     sent = controller.send_facebook_message(
                         partner_id=self.partner_id.id,
                         message=message.body,
