@@ -6,32 +6,29 @@ import { Component, onWillStart, onMounted } from "@odoo/owl";
 
 export class MessageHandler extends Component {
     static template = "messenger_integration.MessageHandler";
-    static props = {};
+    static props = { };
 
     setup() {
-        this.messaging = useService("messaging");
-        this.bus = useService("bus_service");
+        this.messagingService = useService("messaging");
+        this.busService = useService("bus_service");
         
         onWillStart(async () => {
-            await this.messaging.isReady;
+            await this.messagingService.isReady;
         });
         
         onMounted(() => {
-            this._subscribeToBus();
+            this._setupMessageListeners();
         });
     }
 
-    _subscribeToBus() {
-        this.bus.subscribe("mail.message/insert", (payload) => {
-            if (payload) {
-                this.messaging.refresh();
-            }
-        });
-        
-        this.bus.subscribe("mail.message/update", (payload) => {
-            if (payload) {
-                this.messaging.refresh();
-            }
-        });
+    _setupMessageListeners() {
+        this.busService.subscribe("mail.message/insert", this._onMessageUpdate.bind(this));
+        this.busService.subscribe("mail.message/update", this._onMessageUpdate.bind(this));
+    }
+
+    _onMessageUpdate(payload) {
+        if (payload && this.messagingService) {
+            this.messagingService.refresh();
+        }
     }
 }
