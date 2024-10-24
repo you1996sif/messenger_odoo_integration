@@ -197,6 +197,7 @@ class FacebookUserConversation(models.Model):
         ])
 
     def message_post(self, **kwargs):
+        """Override message_post to handle both Odoo chatter and Facebook messages"""
         message = super().message_post(**kwargs)
         
         if message and not self.env.context.get('from_facebook'):
@@ -210,10 +211,22 @@ class FacebookUserConversation(models.Model):
                     )
                     
                     if sent:
-                        self._notify_message_update(message)
+                        # Trigger the bus notification for UI refresh
+                        self.env['bus.bus']._sendone(
+                            'res.partner',
+                            'mail.message/insert',
+                            {
+                                'type': 'message_notification',
+                                'payload': {
+                                    'message_id': message.id,
+                                    'model': self._name,
+                                    'res_id': self.id
+                                }
+                            }
+                        )
                         
             except Exception as e:
-                _logger.exception("Error in message_post: %s", str(e))
+                _logger.error(f"Error sending Facebook message: {str(e)}")
                 
         return message
 
@@ -264,8 +277,8 @@ class FacebookUserConversation(models.Model):
                 self.write({'last_message_date': fields.Datetime.now()})
 
                 # Notify about the new message
-                if message:
-                    self._notify_message_update(message)
+                # if message:
+                #     self._notify_message_update(message)
 
                 self.env.cr.commit()
                 return True
