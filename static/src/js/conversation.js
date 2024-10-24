@@ -1,24 +1,49 @@
-odoo.define('messenger_integration.Conversation', function (require) {
-    "use strict";
+/** @odoo-module */
 
-    var core = require('web.core');
-    var BasicController = require('web.BasicController');
-    var session = require('web.session');
+import { registry } from "@web/core/registry";
+import { useService } from "@web/core/utils/hooks";
+import { useBus } from "@web/core/utils/hooks";
+import { Component, onMounted, useState } from "@odoo/owl";
 
-    BasicController.include({
-        _pushMessage: function (message) {
-            var self = this;
-            this._super.apply(this, arguments);
-            
-            // Handle new message notifications
-            self.call('bus_service', 'addChannel', 'mail.message');
-            self.call('bus_service', 'onNotification', self, function (notifications) {
-                notifications.forEach(function (notification) {
-                    if (notification[0] === 'mail.message/insert') {
-                        self.trigger_up('reload');
-                    }
-                });
+export class FacebookConversationHandler extends Component {
+    setup() {
+        this.state = useState({
+            messages: [],
+        });
+        
+        this.busService = useService("bus_service");
+        this.orm = useService("orm");
+        this.messagingService = useService("messaging");
+        
+        onMounted(() => {
+            this.busService.subscribe("mail.message/insert", (payload) => {
+                this.handleNewMessage(payload);
             });
-        },
-    });
+            
+            this.busService.subscribe("mail.message/update", (payload) => {
+                this.handleMessageUpdate(payload);
+            });
+        });
+    }
+
+    handleNewMessage(payload) {
+        if (payload.type === "message_posted") {
+            // Trigger a reload of the view
+            this.messagingService.refresh();
+        }
+    }
+
+    handleMessageUpdate(payload) {
+        if (payload.type === "message_updated") {
+            // Refresh messaging when message is updated
+            this.messagingService.refresh();
+        }
+    }
+}
+
+FacebookConversationHandler.template = "messenger_integration.FacebookConversationHandler";
+
+// Register the component
+registry.category("main_components").add("FacebookConversationHandler", {
+    Component: FacebookConversationHandler,
 });
