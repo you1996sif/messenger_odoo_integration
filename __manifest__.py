@@ -18,6 +18,11 @@
     #     ],
     # },
     # always loaded
+    'assets': {
+        'web.assets_backend': [
+            '/messenger_integration/static/src/js/conversation.js',
+        ],
+    },
     'data': [
         'security/ir.model.access.csv',
         'views/message_views.xml',
