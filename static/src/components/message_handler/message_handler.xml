@@ -1,16 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<templates xml:space="preserve">
+<templates>
     <t t-name="messenger_integration.MessageHandler" owl="1">
-        <div class="o_message_handler" t-att-class="props.class">
-            <!-- The component will be mounted here but doesn't need visible content -->
-        </div>
-    </t>
-</templates>
-<?xml version="1.0" encoding="UTF-8"?>
-<templates xml:space="preserve">
-    <t t-inherit="web.webclient" t-inherit-mode="extension">
-        <xpath expr="//div[hasclass('o_web_client')]" position="inside">
-            <MessageHandler />
-        </xpath>
+        <div class="o_message_handler" t-att-class="props.class"/>
     </t>
 </templates>
