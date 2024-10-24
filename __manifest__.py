@@ -17,17 +17,17 @@
     #         'messenger_integration/static/src/js/chatter_refresh.js',
     #     ],
     # },
-    # always loaded
-    'assets': {
-        'web.assets_backend': [
-            '/messenger_integration/static/src/core/**/*.js'   ,
-            # Then components
-            '/messenger_integration/static/src/components/**/*.js',
-            '/messenger_integration/static/src/components/**/*.xml',
+    # # always loaded
+    # 'assets': {
+    #     'web.assets_backend': [
+    #         '/messenger_integration/static/src/core/**/*.js'   ,
+    #         # Then components
+    #         '/messenger_integration/static/src/components/**/*.js',
+    #         '/messenger_integration/static/src/components/**/*.xml',
            
            
-        ],
-    },
+    #     ],
+    # },
     'data': [
         'security/ir.model.access.csv',
         'views/message_views.xml',
