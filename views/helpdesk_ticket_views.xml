@@ -1,0 +1,63 @@
+<!-- views/facebook_user_conversation_views.xml -->
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="facebook_user_conversation_form_view_inherit_helpdesk" model="ir.ui.view">
+        <field name="name">facebook.user.conversation.form.inherit.helpdesk</field>
+        <field name="model">facebook.user.conversation</field>
+        <field name="inherit_id" ref="messenger_odoo_integration.view_facebook_user_conversation_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_create_ticket" 
+                        string="Create Ticket" 
+                        type="object" 
+                        class="btn-primary"/>
+                <button name="action_view_tickets"
+                        type="object"
+                        class="btn-secondary"
+                        icon="fa-ticket"
+                        string="View Tickets"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Helpdesk Tickets">
+                    <field name="helpdesk_ticket_ids">
+                        <tree>
+                            <field name="name"/>
+                            <field name="create_date"/>
+                            <field name="user_id"/>
+                            <field name="stage_id"/>
+                            <field name="priority" widget="priority"/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
+
+<!-- views/helpdesk_ticket_views.xml -->
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="helpdesk_ticket_view_form_inherit_facebook" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.form.inherit.facebook</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_facebook_conversation"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-facebook"
+                        attrs="{'invisible': [('facebook_conversation_id', '=', False)]}">
+                    <field name="facebook_conversation_id" string="Facebook Conv." widget="statinfo"/>
+                </button>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Facebook Conversation" attrs="{'invisible': [('facebook_conversation_id', '=', False)]}">
+                    <group>
+                        <field name="facebook_conversation_id"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
