@@ -104,6 +104,63 @@ class FacebookUserConversation(models.Model):
         
     def name_get(self):
         return [(rec.id, f"{rec.partner_id.name} - Facebook Chat") for rec in self]
+    
+    
+    
+    helpdesk_ticket_ids = fields.One2many('helpdesk.ticket', 'facebook_conversation_id', string='Helpdesk Tickets')
+    ticket_count = fields.Integer(compute='_compute_ticket_count', string='Ticket Count')
+
+    def _compute_ticket_count(self):
+        for record in self:
+            record.ticket_count = len(record.helpdesk_ticket_ids)
+
+    def action_create_ticket(self):
+        """Create a helpdesk ticket from the Facebook conversation."""
+        self.ensure_one()
+        
+        # Get the last message for the ticket description
+        last_message = self.message_ids and self.message_ids[0].message or ''
+        
+        # Create the helpdesk ticket
+        ticket_vals = {
+            'name': _('Support Request from Facebook - %s', self.partner_id.name),
+            'partner_id': self.partner_id.id,
+            'facebook_conversation_id': self.id,
+            'description': last_message,
+            'partner_email': self.partner_id.email,
+            'partner_phone': self.partner_id.phone or self.partner_id.mobile,
+        }
+        
+        ticket = self.env['helpdesk.ticket'].create(ticket_vals)
+        
+        # Add a note in the ticket about its creation from Facebook
+        ticket.message_post(
+            body=_('This ticket was created from a Facebook conversation'),
+            message_type='notification'
+        )
+        
+        # Show the created ticket to the user
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Helpdesk Ticket'),
+            'res_model': 'helpdesk.ticket',
+            'res_id': ticket.id,
+            'view_mode': 'form',
+            'view_type': 'form',
+            'target': 'current',
+        }
+
+    def action_view_tickets(self):
+        """View all tickets related to this conversation."""
+        self.ensure_one()
+        return {
+            'name': _('Helpdesk Tickets'),
+            'view_mode': 'tree,form',
+            'res_model': 'helpdesk.ticket',
+            'domain': [('facebook_conversation_id', '=', self.id)],
+            'type': 'ir.actions.act_window',
+            'context': {'default_facebook_conversation_id': self.id},
+        }
 
     @api.model
     def create_or_update_conversation(self, partner_id):

@@ -9,6 +9,15 @@
                         <button name="action_archive" string="Archive" type="object" invisible="conversation_status == 'archived'"/>
                         <button name="action_unarchive" string="Unarchive" type="object" invisible="conversation_status == 'active'"/>
                         <button name="action_open_create_sale_order_wizard" string="Create Sale Order" type="object" class="btn-primary"/>
+                        <button name="action_create_ticket" 
+                                string="Create Ticket" 
+                                type="object" 
+                                class="btn-primary"/>
+                        <button name="action_view_tickets"
+                                type="object"
+                                class="btn-secondary"
+                                icon="fa-ticket"
+                                string="View Tickets"/>
                     </header>
                     <sheet>
                         <group>
@@ -73,6 +82,17 @@
                                         <field name="product_uom_qty"/>
                                         <field name="price_unit"/>
                                         <field name="price_subtotal" sum="Total"/>
+                                    </tree>
+                                </field>
+                            </page>
+                            <page string="Helpdesk Tickets">
+                                <field name="helpdesk_ticket_ids">
+                                    <tree>
+                                        <field name="name"/>
+                                        <field name="create_date"/>
+                                        <field name="user_id"/>
+                                        <field name="stage_id"/>
+                                        <field name="priority" widget="priority"/>
                                     </tree>
                                 </field>
                             </page>
