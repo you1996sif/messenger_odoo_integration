@@ -1,12 +1,13 @@
-<!-- views/helpdesk_ticket_views.xml -->
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Inherit Helpdesk Ticket Form View to add Facebook integration -->
     <record id="helpdesk_ticket_view_form_inherit_facebook" model="ir.ui.view">
         <field name="name">helpdesk.ticket.form.inherit.facebook</field>
         <field name="model">helpdesk.ticket</field>
         <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//div[@name='button_box']" position="inside">
+            <!-- Add Facebook Conversation Button -->
+            <div name="button_box" position="inside">
                 <button name="action_view_facebook_conversation"
                         type="object"
                         class="oe_stat_button"
@@ -14,14 +15,43 @@
                         attrs="{'invisible': [('facebook_conversation_id', '=', False)]}">
                     <field name="facebook_conversation_id" string="Facebook Conv." widget="statinfo"/>
                 </button>
-            </xpath>
-            <xpath expr="//notebook" position="inside">
+            </div>
+            
+            <!-- Add Facebook Conversation Info -->
+            <notebook position="inside">
                 <page string="Facebook Conversation" attrs="{'invisible': [('facebook_conversation_id', '=', False)]}">
                     <group>
                         <field name="facebook_conversation_id"/>
                     </group>
                 </page>
-            </xpath>
+            </notebook>
+        </field>
+    </record>
+
+    <!-- Add Facebook filter to Helpdesk Ticket search view -->
+    <record id="helpdesk_ticket_view_search_inherit_facebook" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.search.inherit.facebook</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_search"/>
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="facebook_conversation_id"/>
+                <filter string="With Facebook Conversation" 
+                        name="has_facebook" 
+                        domain="[('facebook_conversation_id', '!=', False)]"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Add Facebook info to Helpdesk Ticket tree view -->
+    <record id="helpdesk_ticket_view_tree_inherit_facebook" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.tree.inherit.facebook</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_tree"/>
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="facebook_conversation_id" optional="show"/>
+            </field>
         </field>
     </record>
 </odoo>

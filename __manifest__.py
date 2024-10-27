@@ -33,8 +33,8 @@
         'views/message_views.xml',
         'views/privacy_policy_templates.xml',
         'views/facebook_conversation_views.xml',
-        'views/helpdesk_ticket_views.xml',
         'views/facebook_user_conversation_views.xml',
+        'views/helpdesk_ticket_views.xml',
         'wizards/create_sale_order_wizard_views.xml',
         
 
