@@ -13,11 +13,11 @@
                                 string="Create Ticket" 
                                 type="object" 
                                 class="btn-primary"/>
-                        <button name="action_view_tickets"
+                        <!-- <button name="action_view_tickets"
                                 type="object"
                                 class="btn-secondary"
                                 icon="fa-ticket"
-                                string="View Tickets"/>
+                                string="View Tickets"/> -->
                     </header>
                     <sheet>
                         <group>
@@ -85,7 +85,7 @@
                                     </tree>
                                 </field>
                             </page>
-                            <page string="Helpdesk Tickets">
+                            <!-- <page string="Helpdesk Tickets">
                                 <field name="helpdesk_ticket_ids">
                                     <tree>
                                         <field name="name"/>
@@ -95,7 +95,7 @@
                                         <field name="priority" widget="priority"/>
                                     </tree>
                                 </field>
-                            </page>
+                            </page> -->
                         </notebook>
                     </sheet>
                     <div class="oe_chatter">
