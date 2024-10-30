@@ -69,6 +69,8 @@
                                         <field name="date_order"/>
                                         <field name="state"/>
                                         <field name="amount_total"/>
+                                        <field name="return_deadline"/>
+                                        
                                     </tree>
                                 </field>
                             </page>
