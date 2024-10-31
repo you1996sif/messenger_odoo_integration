@@ -23,67 +23,44 @@ class MailMail(models.Model):
                     x_odoo_objects = headers['X-Odoo-Objects']
                     if isinstance(x_odoo_objects, str) and x_odoo_objects.startswith('facebook.user.conversation'):
                         values['is_facebook_message'] = True
-                        # Don't mark as sent yet
+                        # Create the record but don't set state to sent yet
+                        # It will be set to sent after successful Facebook sending
                         _logger.info("Created facebook conversation message record")
             except (ValueError, SyntaxError) as e:
                 _logger.error("Error parsing headers: %s", str(e))
                 pass
 
-        mail = super().create(values)
-        
-        # Trigger immediate processing for facebook messages
-        if mail.is_facebook_message:
-            self._trigger_facebook_message_process(mail)
-        
-        return mail
-
-    def _trigger_facebook_message_process(self, mail):
-        """Process Facebook message and update chatter immediately"""
-        try:
-            # Process the Facebook message
-            conversation = self.env['facebook.user.conversation'].browse(mail.res_id)
-            if conversation:
-                # Here you would add your Facebook sending logic
-                # For now, we'll just mark it as processed
-                mail.write({
-                    'state': 'sent',
-                    'date': fields.Datetime.now()
-                })
-                
-                # Force update the message_ids in the chatter
-                if mail.mail_message_id:
-                    mail.mail_message_id.write({
-                        'message_type': 'comment',
-                        'subtype_id': self.env.ref('mail.mt_comment').id,
-                    })
-                    
-                    # Notify UI about the new message
-                    self.env['bus.bus']._sendone(
-                        conversation,
-                        'mail.message/insert',
-                        {
-                            'message': mail.mail_message_id.message_format()[0],
-                            'record_name': conversation.display_name,
-                        }
-                    )
-                    
-                _logger.info(f"Successfully processed Facebook message for conversation {conversation.id}")
-                
-        except Exception as e:
-            _logger.error(f"Error processing Facebook message: {str(e)}")
-            mail.write({'state': 'exception'})
+        return super().create(values)
 
     def _send(self, auto_commit=False, raise_exception=False, smtp_session=None):
-        # Skip email sending for Facebook messages
+        # Split records between Facebook messages and regular emails
         facebook_messages = self.filtered(lambda m: m.is_facebook_message)
         regular_emails = self - facebook_messages
         
-        # Mark Facebook messages as sent without email processing
-        if facebook_messages:
-            facebook_messages.write({
-                'state': 'sent',
-                'date': fields.Datetime.now()
-            })
+        # Process Facebook messages
+        for message in facebook_messages:
+            try:
+                # Get the related Facebook conversation
+                conversation = self.env['facebook.user.conversation'].browse(message.res_id)
+                if conversation:
+                    # Here you would call your method to send to Facebook
+                    # This is a placeholder - replace with your actual Facebook sending logic
+                    self.env['facebook.user.conversation'].send_facebook_message(
+                        conversation_id=conversation.id,
+                        message_body=message.body_html,  # or message.body if you prefer plain text
+                        attachment_ids=message.attachment_ids,
+                    )
+                    
+                    # Mark as sent after successful Facebook sending
+                    message.write({
+                        'state': 'sent',
+                        'date': fields.Datetime.now()
+                    })
+                    _logger.info(f"Successfully sent Facebook message for conversation {conversation.id}")
+            except Exception as e:
+                _logger.error(f"Error sending Facebook message: {str(e)}")
+                if raise_exception:
+                    raise
         
         # Process regular emails normally
         if regular_emails:
@@ -95,24 +72,21 @@ class MailMail(models.Model):
         return True
 
     @api.model
-    def process_email_queue(self, ids=None):
-        """Override to handle Facebook messages differently"""
-        if ids is None:
-            ids = []
-        messages = self.browse(ids) if ids else self.search([
-            ('state', 'in', ['outgoing', 'ready']),
-            '|',
-            ('scheduled_date', '<=', fields.Datetime.now()),
-            ('scheduled_date', '=', False)
-        ])
-        
-        # Split and process Facebook messages separately
-        facebook_messages = messages.filtered(lambda m: m.is_facebook_message)
-        regular_emails = messages - facebook_messages
-        
-        # Process Facebook messages
-        for message in facebook_messages:
-            self._trigger_facebook_message_process(message)
-        
-        # Process regular emails
-        return super(MailMail, regular_emails).process_email_queue()
+    def search_and_cancel_by_body(self, body_text):
+        if not body_text:
+            return
+        try:
+            # Search for emails containing the given text in the body
+            emails = self.search([
+                ('body_html', 'ilike', body_text),
+                ('state', 'in', ['outgoing', 'ready'])
+            ])
+            
+            if emails:
+                emails.write({'state': 'cancel'})
+                _logger.info("Cancelled %d email(s) with body containing: %s", len(emails), body_text)
+            else:
+                _logger.info("No emails found to cancel with body containing: %s", body_text)
+                
+        except Exception as e:
+            _logger.error("Error in search_and_cancel_by_body: %s", str(e))
