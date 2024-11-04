@@ -240,6 +240,8 @@ class FacebookWebhookController(http.Controller):
         """
         Sends a message to the partner's Chatter in Odoo.
         """
+        message_text = self.strip_html(message_text)
+       
         partner.message_post(body=message_text, message_type='comment')
 
     def _handle_messaging_postbacks(self, event):
