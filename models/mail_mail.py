@@ -71,12 +71,20 @@ class MailMail(models.Model):
 
     @api.model
     def create(self, values):
+        _logger.info('create')
+        
         if 'headers' in values:
+            _logger.info(' if headers')
             try:
+                _logger.info('try')
                 headers = ast.literal_eval(values['headers'])
+                _logger.info('headers')
+                _logger.info(headers)
                 if isinstance(headers, dict) and 'X-Odoo-Objects' in headers:
+                    _logger.info(' isinstance(headers,')
                     x_odoo_objects = headers['X-Odoo-Objects']
                     if isinstance(x_odoo_objects, str) and x_odoo_objects.startswith('facebook.user.conversation'):
+                        _logger.info(' instance(x_odoo_objects,')
                         # Set the state to 'sent' immediately
                         values['state'] = 'sent'
                         # Optionally, set a sent date
@@ -84,13 +92,19 @@ class MailMail(models.Model):
             except (ValueError, SyntaxError):
                 # If there's an error parsing the headers, just proceed normally
                 pass
+        _logger.info(' ggggggggggggggggg')
 
         return super(MailMail, self).create(values)
 
     def _send(self, auto_commit=False, raise_exception=False, smtp_session=None):
+        _logger.info(' def _send(self, auto_comm')
         # For emails related to facebook.user.conversation, mark as sent without actually sending
         facebook_mails = self.filtered(lambda m: m.model == 'facebook.user.conversation')
+        _logger.info(' facebook_mails')
+        _logger.info(facebook_mails)
         if facebook_mails:
+            _logger.info('ifffffacebook_mails')
+            _logger.info(facebook_mails)
             facebook_mails.write({'state': 'sent'})
         
         # Process other emails normally
@@ -99,9 +113,12 @@ class MailMail(models.Model):
         
     @api.model
     def search_and_cancel_by_body(self, body_text):
+        _logger.info('search_and_cancel_by_body')
         if not body_text:
+            _logger.info('if not body_text')
             return
         try:
+            _logger.info('try')
             # Search for emails containing the given text in the body
             emails = self.search([
                 ('body_html', 'ilike', body_text),
@@ -109,6 +126,7 @@ class MailMail(models.Model):
             ])
             
             if emails:
+                _logger.info(' if emails:')
                 emails.write({'state': 'cancel'})
                 _logger.info("Cancelled %d email(s) with body containing: %s", len(emails), body_text)
             else:
