@@ -5,5 +5,5 @@ from . import message
 from . import FacebookConversation
 from . import facebook_user_conversation
 # from . import facebook_user_conversation_test
-from . import mail_mail
+# from . import mail_mail
 from . import helpdesk_ticket_inherit
