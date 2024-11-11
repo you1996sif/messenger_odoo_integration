@@ -40,29 +40,6 @@ class FacebookWebhookController(http.Controller):
             _logger.exception(f'Error in facebook_webhook: {str(e)}')
             return Response("Internal Server Error", status=500)
 
-    # @http.route('/facebook/send_message', type='json', auth='user')
-    # def send_facebook_message_route(self, partner_id, message):
-    #     _logger.info(f"Attempting to send Facebook message to partner {partner_id}: {message}")
-    #     partner = request.env['res.partner'].sudo().browse(partner_id)
-    #     _logger.info(f"Attempting to send Facebook message to partner: {partner}")
-    #     if not partner.facebook_id:
-    #         return False
-
-    #     # Your Facebook page access token
-    #     # access_token = request.env['ir.config_parameter'].sudo().get_param('facebook.page_access_token')
-
-    #     url = f'https://graph.facebook.com/v11.0/me/messages?access_token={access_token}'
-    #     payload = {
-    #         'recipient': {'id': partner.facebook_id},
-    #         'message': {'text': message}
-    #     }
-    #     try:
-    #         response = requests.post(url, json=payload)
-    #         response.raise_for_status()  # Raises an HTTPError for bad responses
-    #         return True
-    #     except requests.exceptions.RequestException as e:
-    #         _logger.error(f"Failed to send Facebook message: {str(e)}")
-    #         return False
 
     @http.route('/facebook/send_message', type='json', auth='user')
     def send_facebook_message_route(self, partner_id, message):
@@ -120,7 +97,14 @@ class FacebookWebhookController(http.Controller):
             _logger.info('returning 200:')
             # MailMail.reload_page()
             request.env['mail.mail'].sudo().reload_page()
+            followers = self.message_follower_ids.filtered(
+                lambda f: f.partner_id == self.env.user.partner_id
+            )
+            if followers:
+                followers.sudo().unlink()
+            _logger.info("if followers:")
             return Response("OK", status=200)
+        
         except Exception as e:
             _logger.exception(f'Error in _handle_webhook_event: {str(e)}')
             return Response("Internal Server Error", status=500)
