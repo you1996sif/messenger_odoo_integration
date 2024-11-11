@@ -7,6 +7,8 @@ import urllib.parse
 import requests
 import re
 import uuid
+from odoo.exceptions import UserError
+
 
 _logger = logging.getLogger(__name__)
 
