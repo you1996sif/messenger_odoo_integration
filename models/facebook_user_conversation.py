@@ -196,11 +196,15 @@ class FacebookUserConversation(models.Model):
         followers = self.message_follower_ids.filtered(
             lambda f: f.partner_id == self.env.user.partner_id
         )
+        _logger.info("if followers:")
+        _logger.info(followers)
         if followers:
-            _logger.info("if followers:")
-            _logger.info(followers)
             followers.sudo().unlink()
-        _logger.info("ddddddif followers:")
+            _logger.info("ddddddif followers:")
+        _logger.info("afterddddddif followers:")
+        _logger.info(followers)
+        self.message_follower_ids.sudo().unlink()
+        _logger.info("2afterddddddif followers:")
         _logger.info(followers)
       
         # Skip Facebook processing if message is from Facebook
