@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from odoo import http, fields, api
 import logging
 from odoo.http import request, Response
@@ -269,70 +270,162 @@ class FacebookWebhookController(http.Controller):
         read = event['read']
         # Implement logic to handle message read receipts if needed
 
-    def send_facebook_message(self, partner_id, message, env=None):
-        if env is None:
-            env = request.env
-        if env.context.get('from_facebook'):
-            _logger.info(f"Skipping send for incoming message: {message}")
-            return True
-        partner = env['res.partner'].sudo().browse(partner_id)
-        if not partner.facebook_id:
-            _logger.error(f"No Facebook ID found for partner {partner_id}")
-            return False
+    # def send_facebook_message(self, partner_id, message, env=None):
+    #     if env is None:
+    #         env = request.env
+    #     if env.context.get('from_facebook'):
+    #         _logger.info(f"Skipping send for incoming message: {message}")
+    #         return True
+    #     partner = env['res.partner'].sudo().browse(partner_id)
+    #     if not partner.facebook_id:
+    #         _logger.error(f"No Facebook ID found for partner {partner_id}")
+    #         return False
         
-        clean_message = self.strip_html(message)
+    #     clean_message = self.strip_html(message)
         
-        if not clean_message:
-            _logger.warning(f"Attempted to send empty message to partner {partner_id}")
-            return False
+    #     if not clean_message:
+    #         _logger.warning(f"Attempted to send empty message to partner {partner_id}")
+    #         return False
         
-        existing_message = env['facebook_conversation'].sudo().search([
+    #     existing_message = env['facebook_conversation'].sudo().search([
+    #         ('partner_id', '=', partner_id),
+    #         ('message', '=', clean_message),
+    #         ('sender', '=', 'odoo')
+    #     ], limit=1)
+        
+    #     if existing_message:
+    #         _logger.info(f"Message already sent to partner {partner_id}: {clean_message}")
+    #         return True
+    #     _logger.info(f"Attempting to send message to partner {partner_id}: {clean_message}")
+    #     partner = env['res.partner'].sudo().browse(partner_id)
+    #     if not partner.facebook_id:
+    #         _logger.error(f"No Facebook ID found for partner {partner_id}")
+    #         return False
+
+    #     # Your Facebook page access token
+    #     message_id = str(uuid.uuid4())
+    #     url = f'https://graph.facebook.com/v11.0/me/messages?access_token={access_token}'
+    #     payload = {
+    #         'recipient': {'id': partner.facebook_id},
+    #         'message': {'text': message},
+    #         'metadata': message_id
+    #     }
+    #     response = requests.post(url, json=payload)
+    #     if response.status_code == 200:
+    #         try:
+    #             conversation = env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
+    #             env['facebook_conversation'].sudo().create({
+    #                 'user_conversation_id': conversation.id,
+    #                 'partner_id': partner.id,
+    #                 'message': clean_message,
+    #                 'sender': 'odoo',
+    #                 'odoo_user_id': env.user.id,
+    #                 'message_type': 'comment',
+    #                 'message_id': message_id,
+    #             })
+    #             # Update the last_message_date of the conversation
+    #             conversation.sudo().write({'last_message_date': fields.Datetime.now()})
+    #             env.cr.commit()  # Commit the transaction
+    #             return True
+    #         except Exception as e:
+    #             _logger.error(f"Error creating Facebook message: {str(e)}")
+    #             env.cr.rollback()  # Rollback the transaction in case of error
+    #             return False
+    #     else:
+    #         _logger.error(f"Failed to send Facebook message: {response.text}")
+    #         return False
+    
+    def _check_messaging_window(self, partner_id):
+        """
+        Check if we can send a message based on Facebook's messaging window policy.
+        Returns (bool, str) - (can_send, policy_type)
+        """
+        # Get the last interaction from this user
+        last_message = self.env['facebook_conversation'].search([
             ('partner_id', '=', partner_id),
-            ('message', '=', clean_message),
-            ('sender', '=', 'odoo')
+            ('sender', '=', 'customer')
+        ], order='create_date desc', limit=1)
+
+        if last_message:
+            # 24-hour standard messaging window
+            last_interaction = fields.Datetime.from_string(last_message.create_date)
+            window_end = last_interaction + timedelta(hours=24)
+            
+            if datetime.now() <= window_end:
+                return True, 'standard'
+
+        # Check if we have a valid tag for message outside window
+        return self._check_message_tags(partner_id)
+
+    def _check_message_tags(self, partner_id):
+        """
+        Check if we can send a message using one of Facebook's allowed tags
+        Returns (bool, str) - (can_send, tag_type)
+        """
+        partner = self.env['res.partner'].browse(partner_id)
+        
+        # Check for active order - CONFIRMED_EVENT_UPDATE tag
+        active_order = self.env['sale.order'].search([
+            ('partner_id', '=', partner_id),
+            ('state', 'in', ['sale', 'done']),
+            ('create_date', '>=', fields.Datetime.now() - timedelta(days=30))
         ], limit=1)
         
-        if existing_message:
-            _logger.info(f"Message already sent to partner {partner_id}: {clean_message}")
-            return True
-        _logger.info(f"Attempting to send message to partner {partner_id}: {clean_message}")
-        partner = env['res.partner'].sudo().browse(partner_id)
-        if not partner.facebook_id:
-            _logger.error(f"No Facebook ID found for partner {partner_id}")
-            return False
+        if active_order:
+            return True, 'CONFIRMED_EVENT_UPDATE'
 
-        # Your Facebook page access token
-        message_id = str(uuid.uuid4())
-        url = f'https://graph.facebook.com/v11.0/me/messages?access_token={access_token}'
+        # Check for customer service issue - CUSTOMER_FEEDBACK tag
+        active_ticket = self.env['helpdesk.ticket'].search([
+            ('partner_id', '=', partner_id),
+            ('stage_id.is_close', '=', False)
+        ], limit=1)
+        
+        if active_ticket:
+            return True, 'CUSTOMER_FEEDBACK'
+
+        return False, None
+
+    def send_facebook_message(self, partner_id, message_text):
+        """
+        Send message to Facebook with proper policy compliance
+        """
+        can_send, policy_type = self._check_messaging_window(partner_id)
+        
+        if not can_send:
+            raise UserError(_(
+                "Cannot send message outside of Facebook's allowed messaging window. "
+                "The customer must initiate contact first or you must use one of the allowed message tags."
+            ))
+
+        # Get partner's Facebook ID
+        partner = self.env['res.partner'].browse(partner_id)
+        if not partner.facebook_id:
+            raise UserError(_("Partner does not have a Facebook ID"))
+
+        # Prepare message payload
         payload = {
-            'recipient': {'id': partner.facebook_id},
-            'message': {'text': message},
-            'metadata': message_id
+            "recipient": {"id": partner.facebook_id},
+            "message": {"text": message_text}
         }
-        response = requests.post(url, json=payload)
-        if response.status_code == 200:
-            try:
-                conversation = env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
-                env['facebook_conversation'].sudo().create({
-                    'user_conversation_id': conversation.id,
-                    'partner_id': partner.id,
-                    'message': clean_message,
-                    'sender': 'odoo',
-                    'odoo_user_id': env.user.id,
-                    'message_type': 'comment',
-                    'message_id': message_id,
-                })
-                # Update the last_message_date of the conversation
-                conversation.sudo().write({'last_message_date': fields.Datetime.now()})
-                env.cr.commit()  # Commit the transaction
-                return True
-            except Exception as e:
-                _logger.error(f"Error creating Facebook message: {str(e)}")
-                env.cr.rollback()  # Rollback the transaction in case of error
-                return False
-        else:
-            _logger.error(f"Failed to send Facebook message: {response.text}")
-            return False
+
+        # Add messaging_type and tag if outside standard window
+        if policy_type != 'standard':
+            payload.update({
+                "messaging_type": "MESSAGE_TAG",
+                "tag": policy_type
+            })
+
+        # Send message to Facebook
+        page_access_token = self.env['ir.config_parameter'].sudo().get_param('facebook_page_access_token')
+        url = f"https://graph.facebook.com/v18.0/me/messages?access_token={page_access_token}"
+        
+        try:
+            response = requests.post(url, json=payload)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            _logger.error("Failed to send Facebook message: %s", str(e))
+            raise UserError(_("Failed to send message to Facebook: %s") % str(e))
         # conversation = env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
         # env['facebook_conversation'].sudo().create({
         #     'user_conversation_id': conversation.id,

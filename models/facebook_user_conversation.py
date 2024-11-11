@@ -196,7 +196,7 @@ class FacebookUserConversation(models.Model):
                 sent = controller.send_facebook_message(
                     self.partner_id.id,
                     clean_body,
-                    env=self.env
+                    # env=self.env
                 )
                 
                 if not sent:
@@ -206,7 +206,7 @@ class FacebookUserConversation(models.Model):
             _logger.error('Error sending message to Facebook: %s', str(e))
             raise UserError(_("Failed to send message: %s") % str(e))
             
-            return message
+        return message
     # def message_post(self, **kwargs):
     #     _logger.info(f"message_post called with context: {self.env.context}")
     #     if self.env.context.get('facebook_message'):
