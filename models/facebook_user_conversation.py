@@ -184,6 +184,9 @@ class FacebookUserConversation(models.Model):
 
     def message_post(self, **kwargs):
         """Override message_post to handle Facebook integration"""
+        _logger.info("Override message_post to handle Facebook integration")
+        _logger.info("def message_post(self, **kwargs):n")
+        
         # Skip Facebook processing if message is from Facebook
         if self.env.context.get('from_facebook'):
             return super(FacebookUserConversation, self).message_post(**kwargs)
@@ -191,6 +194,7 @@ class FacebookUserConversation(models.Model):
         message = super(FacebookUserConversation, self).message_post(**kwargs)
         
         try:
+            _logger.info("ontroller = FacebookWebhookController()")
             # Initialize controller with current environment
             controller = FacebookWebhookController()
             clean_body = controller.strip_html(message.body)
@@ -214,6 +218,7 @@ class FacebookUserConversation(models.Model):
                     'odoo_user_id': self.env.user.id,
                     'message_type': 'comment'
                 })
+                _logger.info("elf.env['facebook_conversation'].sudo().create({")
                 
                 return message
                 
@@ -230,10 +235,15 @@ class FacebookUserConversation(models.Model):
     #     return super(FacebookUserConversation, self).message_post(**kwargs)
 
     def send_facebook_message(self, message):
-        """Send a message to Facebook Messenger"""
+        
+       
+        _logger.info("Send a message to Facebook Messenger")
+        
+        
         self.ensure_one()
         controller = FacebookWebhookController()
         clean_message = controller.strip_html(message)
+        _logger.info(" clean_message = controller.strip_html(message)r")
         
         if clean_message:
             sent = controller.send_facebook_message(
@@ -241,8 +251,10 @@ class FacebookUserConversation(models.Model):
                 clean_message, 
                 env=self.env
             )
+            _logger.info("if clean_message:")
             
             if sent:
+                _logger.info("if sent:")
                 # Create a record in facebook_conversation
                 self.env['facebook_conversation'].sudo().create({
                     'user_conversation_id': self.id,
@@ -257,13 +269,15 @@ class FacebookUserConversation(models.Model):
                 return True
             else:
                 raise UserError(_("Failed to send message to Facebook."))
+        _logger.info( "'type': 'ir.actions.client'")
+        
         return {
         'type': 'ir.actions.client',
         'tag': 'reload'}
         
     # def send_facebook_message(self, message):
     #     self.ensure_one()
-    #     _logger.info(f"Attempting to send Facebook message: {message}")
+    #     def send_facebook_message(self, message):
     #     controller = self.env['facebook.webhook.controller'].sudo()
     #     clean_message = controller.strip_html(message)
     #     if clean_message:

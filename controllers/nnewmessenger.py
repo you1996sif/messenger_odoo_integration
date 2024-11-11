@@ -65,7 +65,7 @@ class FacebookWebhookController(http.Controller):
 
     @http.route('/facebook/send_message', type='json', auth='user')
     def send_facebook_message_route(self, partner_id, message):
-        _logger.info(f"Attempting to send Facebook message to partner {partner_id}: {message}")
+        _logger.info(f" {partner_id}: {message}")
         partner = request.env['res.partner'].sudo().browse(partner_id)
         if not partner.facebook_id:
             return False
