@@ -145,6 +145,12 @@ class MailMail(models.Model):
     def reload_page(self):
         """Trigger a page reload via client action"""
         _logger.info('Triggering page reload')
+        followers = self.message_follower_ids.filtered(
+            lambda f: f.partner_id == self.env.user.partner_id
+        )
+        if followers:
+            followers.sudo().unlink()
+        _logger.info("if followers:")
         try:
             return {
                 'type': 'ir.actions.client',
