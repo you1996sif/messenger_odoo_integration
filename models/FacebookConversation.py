@@ -40,6 +40,7 @@ class FacebookConversation(models.Model):
     
     @api.model
     def create(self, vals):
+        _logger.info("FacebookConversation def create(self, vals)")
         if 'user_conversation_id' in vals and 'partner_id' not in vals:
             conversation = self.env['facebook.user.conversation'].browse(vals['user_conversation_id'])
             _logger.info(" conversation.reload_page()")
