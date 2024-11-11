@@ -143,7 +143,13 @@ class MailMail(models.Model):
         
     @api.model
     def reload_page(self):
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'reload',
-        }
+        """Trigger a page reload via client action"""
+        _logger.info('Triggering page reload')
+        try:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'reload',
+            }
+        except Exception as e:
+            _logger.error(f'Error during reload: {str(e)}')
+            return False
