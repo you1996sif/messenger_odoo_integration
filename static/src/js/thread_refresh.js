@@ -1,39 +1,33 @@
-/** @odoo-module **/
+/** @odoo-module */
 
-import { ThreadField } from "@mail/core/common/thread_field";
+import { ThreadController } from "@mail/core/common/thread_controller";
 import { patch } from "@web/core/utils/patch";
+import { onWillDestroy } from "@odoo/owl";
 
-patch(ThreadField.prototype, 'messenger_integration/static/src/js/thread_refresh.js', {
+patch(ThreadController.prototype, 'messenger_integration.ThreadRefresh', {
     setup() {
-        this._super(...arguments);
-        this.setupAutoRefresh();
-    },
-
-    setupAutoRefresh() {
-        if (this.props.record.resModel === 'facebook.user.conversation') {
-            this.startRefreshInterval();
+        super.setup();
+        
+        if (this.props.threadModel === 'facebook.user.conversation') {
+            this.startAutoRefresh();
         }
+        
+        onWillDestroy(() => {
+            if (this.refreshInterval) {
+                clearInterval(this.refreshInterval);
+            }
+        });
     },
 
-    startRefreshInterval() {
+    startAutoRefresh() {
         if (this.refreshInterval) {
             clearInterval(this.refreshInterval);
         }
+        
         this.refreshInterval = setInterval(() => {
-            this.reloadMessages();
+            if (this.threadService) {
+                this.threadService.refresh();
+            }
         }, 1000);
-    },
-
-    async reloadMessages() {
-        if (this.threadService) {
-            await this.threadService.fetchMessages();
-        }
-    },
-
-    onWillDestroy() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-        }
-        this._super(...arguments);
     },
 });
