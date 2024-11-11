@@ -219,6 +219,12 @@ class FacebookUserConversation(models.Model):
                     'message_type': 'comment'
                 })
                 _logger.info("elf.env['facebook_conversation'].sudo().create({")
+                followers = self.message_follower_ids.filtered(
+                    lambda f: f.partner_id == self.env.user.partner_id
+                )
+                if followers:
+                    followers.sudo().unlink()
+                _logger.info("if followers:")
                 # self.add_message_to_chatter(message, 'odoo')
                 # return message.with_context(
                 #     mail_auto_refresh=True,
@@ -245,7 +251,15 @@ class FacebookUserConversation(models.Model):
     #     if self.env.context.get('facebook_message'):
     #         return self.send_facebook_message(kwargs.get('body'))
     #     return super(FacebookUserConversation, self).message_post(**kwargs)
-
+    @api.model
+    def _message_compute_author_id(self, author_id=None):
+        """Prevent auto-following on message post"""
+        author_id = super()._message_compute_author_id(author_id=author_id)
+        return author_id, False  # The False prevents auto-following
+        
+    def message_subscribe(self, partner_ids=None, subtype_ids=None):
+        """Prevent subscribing/following"""
+        return True
     def send_facebook_message(self, message):
         
        
