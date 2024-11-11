@@ -257,7 +257,10 @@ class FacebookUserConversation(models.Model):
                 return True
             else:
                 raise UserError(_("Failed to send message to Facebook."))
-        return False
+        return {
+        'type': 'ir.actions.client',
+        'tag': 'reload'}
+        
     # def send_facebook_message(self, message):
     #     self.ensure_one()
     #     _logger.info(f"Attempting to send Facebook message: {message}")
