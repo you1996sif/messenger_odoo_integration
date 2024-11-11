@@ -221,16 +221,20 @@ class FacebookUserConversation(models.Model):
                 _logger.info("elf.env['facebook_conversation'].sudo().create({")
                 # self.add_message_to_chatter(message, 'odoo')
                 
-                return {
-                'type': 'ir.actions.client',
-                'tag': 'reload'
-            }
+                
+                return message
                 
         except Exception as e:
             _logger.error('Error sending message to Facebook: %s', str(e))
             raise UserError(_("Failed to send message: %s") % str(e))
             
         return message
+    @api.model
+    def reload_page(self):
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
     
     # def message_post(self, **kwargs):
     #     _logger.info(f"message_post called with context: {self.env.context}")
