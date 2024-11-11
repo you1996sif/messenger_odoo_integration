@@ -1,33 +1,29 @@
-/** @odoo-module */
+/** @odoo-module **/
 
-import { ThreadController } from "@mail/core/common/thread_controller";
+import { Chatter } from "@mail/core/web/chatter";
 import { patch } from "@web/core/utils/patch";
+import { useInterval } from "@web/core/utils/timing";
 import { onWillDestroy } from "@odoo/owl";
 
-patch(ThreadController.prototype, 'messenger_integration.ThreadRefresh', {
+patch(Chatter.prototype, 'messenger_integration.ChatterRefresh', {
     setup() {
         super.setup();
         
-        if (this.props.threadModel === 'facebook.user.conversation') {
-            this.startAutoRefresh();
-        }
+        const refreshInterval = useInterval(() => {
+            if (this.props.record.resModel === 'facebook.user.conversation') {
+                this.reloadThread();
+            }
+        }, 1000);
         
         onWillDestroy(() => {
-            if (this.refreshInterval) {
-                clearInterval(this.refreshInterval);
+            if (refreshInterval) {
+                refreshInterval.clear();
             }
         });
     },
 
-    startAutoRefresh() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-        }
-        
-        this.refreshInterval = setInterval(() => {
-            if (this.threadService) {
-                this.threadService.refresh();
-            }
-        }, 1000);
-    },
+    async reloadThread() {
+        await this.props.record.load();
+        this.render();
+    }
 });
