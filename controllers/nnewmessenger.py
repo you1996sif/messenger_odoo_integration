@@ -97,12 +97,6 @@ class FacebookWebhookController(http.Controller):
             _logger.info('returning 200:')
             # MailMail.reload_page()
             request.env['mail.mail'].sudo().reload_page()
-            followers = self.message_follower_ids.filtered(
-                lambda f: f.partner_id == self.env.user.partner_id
-            )
-            if followers:
-                followers.sudo().unlink()
-            _logger.info("if followers:")
             return Response("OK", status=200)
         
         except Exception as e:

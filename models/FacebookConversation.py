@@ -46,11 +46,25 @@ class FacebookConversation(models.Model):
             _logger.info(" conversation.reload_page()")
             conversation.reload_page()
             vals['partner_id'] = conversation.partner_id.id
-        return super(FacebookConversation, self).create(vals)
+        xx= super(FacebookConversation, self).create(vals)
+        followers = self.message_follower_ids.filtered(
+            lambda f: f.partner_id == self.env.user.partner_id
+        )
+        if followers:
+            followers.sudo().unlink()
+        _logger.info("if followers:")
+        
+        return xx
     
     @api.model
     def create_from_facebook(self, partner, message):
         conversation = self.env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
+        followers = self.message_follower_ids.filtered(
+            lambda f: f.partner_id == self.env.user.partner_id
+        )
+        if followers:
+            followers.sudo().unlink()
+        _logger.info("if followers:")
         return self.create({
             'user_conversation_id': conversation.id,
             'message': message,
