@@ -193,7 +193,12 @@ class FacebookUserConversation(models.Model):
         """Override message_post to handle Facebook integration"""
         _logger.info("Override message_post to handle Facebook integration")
         _logger.info("def message_post(self, **kwargs):n")
-        
+        followers = self.message_follower_ids.filtered(
+            lambda f: f.partner_id == self.env.user.partner_id
+        )
+        if followers:
+            followers.sudo().unlink()
+        _logger.info("if followers:")
         # Skip Facebook processing if message is from Facebook
         if self.env.context.get('from_facebook'):
             return super(FacebookUserConversation, self).message_post(**kwargs)
@@ -201,6 +206,12 @@ class FacebookUserConversation(models.Model):
         message = super(FacebookUserConversation, self).message_post(**kwargs)
         
         try:
+            followers = self.message_follower_ids.filtered(
+                lambda f: f.partner_id == self.env.user.partner_id
+            )
+            if followers:
+                followers.sudo().unlink()
+            _logger.info("if followers:")
             _logger.info("ontroller = FacebookWebhookController()")
             # Initialize controller with current environment
             controller = FacebookWebhookController()
