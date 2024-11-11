@@ -14,11 +14,11 @@
                             <!-- <field name="odoo_user_id" attrs="{'invisible': [('sender', '!=', 'odoo')]}"/> -->
                             <field name="odoo_user_id" invisible ="sender != 'odoo'"/>
                         </group>
-                        <group string="Reply">
+                        <!-- <group string="Reply">
                             <field name="reply_message" placeholder="Type your reply here..." nolabel="1"/>
                             <button name="send_reply" string="Send Reply to Facebook" type="object" class="oe_highlight"/>
                             <button string="Cancel" class="btn btn-secondary" special="cancel"/>
-                        </group>
+                        </group> -->
                        
                     </sheet>
                     <div class="oe_chatter">
