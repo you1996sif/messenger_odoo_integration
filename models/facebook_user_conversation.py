@@ -197,8 +197,12 @@ class FacebookUserConversation(models.Model):
             lambda f: f.partner_id == self.env.user.partner_id
         )
         if followers:
+            _logger.info("if followers:")
+            _logger.info(followers)
             followers.sudo().unlink()
-        _logger.info("if followers:")
+        _logger.info("ddddddif followers:")
+        _logger.info(followers)
+      
         # Skip Facebook processing if message is from Facebook
         if self.env.context.get('from_facebook'):
             return super(FacebookUserConversation, self).message_post(**kwargs)

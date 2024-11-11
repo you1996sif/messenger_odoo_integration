@@ -93,6 +93,7 @@ class FacebookWebhookController(http.Controller):
             for entry in data.get('entry', []):
                 _logger.info(f'entry: {entry}')
                 self._process_entry(entry)
+                
 
             _logger.info('returning 200:')
             # MailMail.reload_page()
