@@ -366,6 +366,9 @@ class FacebookUserConversation(models.Model):
             except Exception as e:
                 _logger.error('Error processing message: %s', str(e))
                 raise
+        return {
+        'type': 'ir.actions.client',
+        'tag': 'reload'}
     
 @contextmanager
 def facebook_transaction(self):
