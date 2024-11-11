@@ -222,15 +222,15 @@ class FacebookUserConversation(models.Model):
                 # self.add_message_to_chatter(message, 'odoo')
                 
                 
-                if self.env.context.get('http_request'):
-                    _logger.info(" if self.env.context.get('http_request'):")
+                # if self.env.context.get('http_request'):
+                #     _logger.info(" if self.env.context.get('http_request'):")
                     
-                    formatted_message = message.message_format()[0]
-                    formatted_message.update({
-                        'type': 'ir.actions.client',
-                        'tag': 'reload'
-                    })
-                    return formatted_message
+                formatted_message = message.message_format()[0]
+                formatted_message.update({
+                    'type': 'ir.actions.client',
+                    'tag': 'reload'
+                })
+                return formatted_message
                 
         except Exception as e:
             _logger.error('Error sending message to Facebook: %s', str(e))
