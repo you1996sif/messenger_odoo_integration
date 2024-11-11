@@ -11,7 +11,7 @@
   'author': 'Yousif Basil',
     'website': "https://www.yourcompany.com",
 
-    'depends': ['base', 'web', 'contacts', 'mail', 'web', 'sale'],
+    'depends': ['base', 'web', 'contacts', 'mail','sale'],
     # 'assets': {
     #     'web.assets_backend': [
     #         'messenger_integration/static/src/js/chatter_refresh.js',
@@ -41,7 +41,7 @@
         'views/facebook_user_conversation_views.xml',
         # 'views/helpdesk_ticket_views.xml',
         'wizards/create_sale_order_wizard_views.xml',
-        'views/assets.xml',
+        # 'views/assets.xml',
         
 
     ],
