@@ -5,25 +5,28 @@ import { patch } from "@web/core/utils/patch";
 import { useInterval } from "@web/core/utils/timing";
 import { onWillDestroy } from "@odoo/owl";
 
-patch(Chatter.prototype, 'messenger_integration.ChatterRefresh', {
+patch(Chatter, {
     setup() {
-        super.setup();
+        const _super = this._super.bind(this);
+        _super(...arguments);
         
-        const refreshInterval = useInterval(() => {
-            if (this.props.record.resModel === 'facebook.user.conversation') {
+        if (this.props.record.resModel === 'facebook.user.conversation') {
+            const interval = useInterval(() => {
                 this.reloadThread();
-            }
-        }, 1000);
-        
-        onWillDestroy(() => {
-            if (refreshInterval) {
-                refreshInterval.clear();
-            }
-        });
+            }, 1000);
+            
+            onWillDestroy(() => {
+                if (interval) {
+                    interval.clear();
+                }
+            });
+        }
     },
 
     async reloadThread() {
-        await this.props.record.load();
-        this.render();
+        if (this.props.record) {
+            await this.props.record.load();
+            this.render();
+        }
     }
 });
