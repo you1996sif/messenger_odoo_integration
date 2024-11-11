@@ -224,7 +224,7 @@ class FacebookUserConversation(models.Model):
                     mail_auto_refresh=True,
                     mail_post_autofollow=True,
                     tracking_disable=False
-                ).message_format()[0]   
+                ).message
                 self.reload_page()
                 return message
                 
