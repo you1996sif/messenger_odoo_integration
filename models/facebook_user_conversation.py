@@ -210,7 +210,7 @@ class FacebookUserConversation(models.Model):
                     raise UserError(_("Failed to send message to Facebook."))
                     
                 # Create a record in facebook_conversation
-                self.env['facebook_conversation'].sudo().create({
+                conv = self.env['facebook_conversation'].sudo().create({
                     'user_conversation_id': self.id,
                     'partner_id': self.partner_id.id,
                     'message': clean_body,
@@ -219,6 +219,8 @@ class FacebookUserConversation(models.Model):
                     'message_type': 'comment'
                 })
                 _logger.info("elf.env['facebook_conversation'].sudo().create({")
+                conv.add_message_to_chatter(message, 'odoo')
+                
                 
                 return message
                 
