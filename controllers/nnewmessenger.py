@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from ..models.facebook_user_conversation import FacebookUserConversation
+# from ..models.facebook_user_conversation import FacebookUserConversation
 from odoo import http, fields, api
 import logging
 from odoo.http import request, Response
