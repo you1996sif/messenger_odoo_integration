@@ -183,6 +183,7 @@ class FacebookUserConversation(models.Model):
 
 
     def message_post(self, **kwargs):
+        """Override message_post to handle Facebook integration"""
         # Skip Facebook processing if message is from Facebook
         if self.env.context.get('from_facebook'):
             return super(FacebookUserConversation, self).message_post(**kwargs)
@@ -190,23 +191,38 @@ class FacebookUserConversation(models.Model):
         message = super(FacebookUserConversation, self).message_post(**kwargs)
         
         try:
+            # Initialize controller with current environment
             controller = FacebookWebhookController()
             clean_body = controller.strip_html(message.body)
+            
             if clean_body:
                 sent = controller.send_facebook_message(
-                    self.partner_id.id,
+                    self.partner_id.facebook_id,  # Use facebook_id instead of partner id
                     clean_body,
-                    # env=self.env
+                    env=self.env
                 )
                 
                 if not sent:
                     raise UserError(_("Failed to send message to Facebook."))
+                    
+                # Create a record in facebook_conversation
+                self.env['facebook_conversation'].sudo().create({
+                    'user_conversation_id': self.id,
+                    'partner_id': self.partner_id.id,
+                    'message': clean_body,
+                    'sender': 'odoo',
+                    'odoo_user_id': self.env.user.id,
+                    'message_type': 'comment'
+                })
+                
                 return message
+                
         except Exception as e:
             _logger.error('Error sending message to Facebook: %s', str(e))
             raise UserError(_("Failed to send message: %s") % str(e))
             
         return message
+    
     # def message_post(self, **kwargs):
     #     _logger.info(f"message_post called with context: {self.env.context}")
     #     if self.env.context.get('facebook_message'):
@@ -214,26 +230,29 @@ class FacebookUserConversation(models.Model):
     #     return super(FacebookUserConversation, self).message_post(**kwargs)
 
     def send_facebook_message(self, message):
+        """Send a message to Facebook Messenger"""
         self.ensure_one()
         controller = FacebookWebhookController()
         clean_message = controller.strip_html(message)
+        
         if clean_message:
-            sent = controller.send_facebook_message(self.partner_id.id, clean_message, env=self.env)
+            sent = controller.send_facebook_message(
+                self.partner_id.facebook_id,  # Use facebook_id instead of partner id
+                clean_message, 
+                env=self.env
+            )
+            
             if sent:
-                self.message_post(
-                    body=clean_message,
-                    message_type='comment',
-                    subtype_xmlid='mail.mt_comment',
-                    author_id=self.env.user.partner_id.id,
-                )
+                # Create a record in facebook_conversation
                 self.env['facebook_conversation'].sudo().create({
                     'user_conversation_id': self.id,
                     'partner_id': self.partner_id.id,
                     'message': clean_message,
                     'sender': 'odoo',
                     'odoo_user_id': self.env.user.id,
-                    'message_type': 'comment',
+                    'message_type': 'comment'
                 })
+                
                 self.write({'last_message_date': fields.Datetime.now()})
                 return True
             else:

@@ -386,48 +386,56 @@ class FacebookWebhookController(http.Controller):
             return True, 'CUSTOMER_FEEDBACK'
 
         return False, None
-
-    def send_facebook_message(self, partner_id, message_text):
-        """
-        Send message to Facebook with proper policy compliance
-        """
-        can_send, policy_type = self._check_messaging_window(partner_id)
+    
+    
+    def __init__(self):
+        super().__init__()
+        self.env = request.env if request else None
         
-        if not can_send:
-            raise UserError(_(
-                "Cannot send message outside of Facebook's allowed messaging window. "
-                "The customer must initiate contact first or you must use one of the allowed message tags."
-            ))
 
-        # Get partner's Facebook ID
-        partner = self.env['res.partner'].browse(partner_id)
-        if not partner.facebook_id:
-            raise UserError(_("Partner does not have a Facebook ID"))
-
-        # Prepare message payload
-        payload = {
-            "recipient": {"id": partner.facebook_id},
-            "message": {"text": message_text}
-        }
-
-        # Add messaging_type and tag if outside standard window
-        if policy_type != 'standard':
-            payload.update({
-                "messaging_type": "MESSAGE_TAG",
-                "tag": policy_type
-            })
-
-        # Send message to Facebook
-        page_access_token = self.env['ir.config_parameter'].sudo().get_param('facebook_page_access_token')
-        url = f"https://graph.facebook.com/v18.0/me/messages?access_token={page_access_token}"
+    def send_facebook_message(self, recipient_id, message_text, env=None):
+        """
+        Send message to Facebook Messenger
+        """
+        if env:
+            self.env = env
         
+        if not self.env:
+            raise ValueError("No Odoo environment available")
+            
         try:
-            response = requests.post(url, json=payload)
-            response.raise_for_status()
+            # Get the page access token from system parameters
+            page_access_token = self.env['ir.config_parameter'].sudo().get_param('facebook_page_access_token')
+            
+            if not page_access_token:
+                _logger.error("Facebook page access token not found")
+                return False
+
+            url = f"https://graph.facebook.com/v18.0/me/messages"
+            
+            headers = {
+                'Content-Type': 'application/json'
+            }
+            
+            data = {
+                'recipient': {'id': recipient_id},
+                'message': {'text': message_text},
+                'access_token': page_access_token
+            }
+            
+            response = requests.post(url, headers=headers, json=data)
+            response_data = response.json()
+            
+            if response.status_code != 200:
+                _logger.error(f"Failed to send Facebook message: {response_data}")
+                return False
+                
             return True
-        except requests.exceptions.RequestException as e:
-            _logger.error("Failed to send Facebook message: %s", str(e))
-            raise UserError(_("Failed to send message to Facebook: %s") % str(e))
+            
+        except Exception as e:
+            _logger.error(f"Failed to send Facebook message: {str(e)}")
+            return False
+
         # conversation = env['facebook.user.conversation'].sudo().create_or_update_conversation(partner.id)
         # env['facebook_conversation'].sudo().create({
         #     'user_conversation_id': conversation.id,
