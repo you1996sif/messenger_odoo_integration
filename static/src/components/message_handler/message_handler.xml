@@ -1,5 +1,0 @@
-<templates xml:space="preserve">
-    <t t-name="messenger_integration.MessageHandler" owl="1">
-        <div class="o_message_handler" t-att-class="props.class"></div>
-    </t>
-</templates>

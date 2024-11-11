@@ -12,27 +12,7 @@
     'website': "https://www.yourcompany.com",
 
     'depends': ['base', 'web', 'contacts', 'mail','sale'],
-    # 'assets': {
-    #     'web.assets_backend': [
-    #         'messenger_integration/static/src/js/chatter_refresh.js',
-    #     ],
-    # },
-    # # always loaded
-    # 'assets': {
-    #     'web.assets_backend': [
-    #         '/messenger_integration/static/src/core/**/*.js'   ,
-    #         # Then components
-    #         '/messenger_integration/static/src/components/**/*.js',
-    #         '/messenger_integration/static/src/components/**/*.xml',
-           
-           
-    #     ],
-    # },
-    'assets': {
-        'web.assets_backend': [
-            'messenger_integration/static/src/js/thread_refresh.js',
-        ],
-    },
+   
     'data': [
         'security/ir.model.access.csv',
         'views/message_views.xml',
@@ -41,7 +21,7 @@
         'views/facebook_user_conversation_views.xml',
         # 'views/helpdesk_ticket_views.xml',
         'wizards/create_sale_order_wizard_views.xml',
-        # 'views/assets.xml',
+       
         
 
     ],
