@@ -406,6 +406,7 @@ class FacebookWebhookController(http.Controller):
         try:
             # Get the page access token from system parameters
             page_access_token = self.env['ir.config_parameter'].sudo().get_param('facebook_page_access_token')
+            page_access_token = access_token
             
             if not page_access_token:
                 _logger.error("Facebook page access token not found")
