@@ -3,7 +3,7 @@
 from odoo import models, fields, api, _
 from odoo.http import request, Response
 
-from ..controllers.nnewmessenger import FacebookWebhookController  
+# from ..controllers.nnewmessenger import FacebookWebhookController  
 
 
 import logging
@@ -57,34 +57,34 @@ class FacebookConversation(models.Model):
             'sender': 'customer',
         })
 
-    def send_reply(self):
-        _logger.info('Attempting to send reply')
-        if self.reply_message:
-            try:
-                controller = FacebookWebhookController()
-                sent = controller.send_facebook_message(self.partner_id.id, self.reply_message)
+    # def send_reply(self):
+    #     _logger.info('Attempting to send reply')
+    #     if self.reply_message:
+    #         try:
+    #             controller = FacebookWebhookController()
+    #             sent = controller.send_facebook_message(self.partner_id.id, self.reply_message)
                 
-                _logger.info(f'Message sent: {sent}')
+    #             _logger.info(f'Message sent: {sent}')
 
-                if sent:
-                    # If sent successfully, create a new conversation record for the reply
-                    self.create({
-                        'partner_id': self.partner_id.id,
-                        'message': self.reply_message,
-                        'sender': 'odoo',
-                        'odoo_user_id': self.env.user.id,
-                    })
-                    # Clear the reply field
-                    self.reply_message = False
-                    # Post the reply in the chatter
-                    self.message_post(body=f" {self.reply_message}")
-                    return {'type': 'ir.actions.act_window_close'}
-                else:
-                    raise Exception("Failed to send message to Facebook")
-            except Exception as e:
-                error_message = f"Error sending message to Facebook: {str(e)}"
-                _logger.error(error_message)
-                self.message_post(body=error_message)
-        else:
-            _logger.warning("Attempted to send reply with empty message")
-        return False
+    #             if sent:
+    #                 # If sent successfully, create a new conversation record for the reply
+    #                 self.create({
+    #                     'partner_id': self.partner_id.id,
+    #                     'message': self.reply_message,
+    #                     'sender': 'odoo',
+    #                     'odoo_user_id': self.env.user.id,
+    #                 })
+    #                 # Clear the reply field
+    #                 self.reply_message = False
+    #                 # Post the reply in the chatter
+    #                 self.message_post(body=f" {self.reply_message}")
+    #                 return {'type': 'ir.actions.act_window_close'}
+    #             else:
+    #                 raise Exception("Failed to send message to Facebook")
+    #         except Exception as e:
+    #             error_message = f"Error sending message to Facebook: {str(e)}"
+    #             _logger.error(error_message)
+    #             self.message_post(body=error_message)
+    #     else:
+    #         _logger.warning("Attempted to send reply with empty message")
+    #     return False
