@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from ..models.facebook_user_conversation import FacebookUserConversation
+from ..models.mail_mail import MailMail
 from odoo import http, fields, api
 import logging
 from odoo.http import request, Response
@@ -118,7 +118,7 @@ class FacebookWebhookController(http.Controller):
                 self._process_entry(entry)
 
             _logger.info('returning 200:')
-            FacebookUserConversation.reload_page()
+            MailMail.reload_page()
             return Response("OK", status=200)
         except Exception as e:
             _logger.exception(f'Error in _handle_webhook_event: {str(e)}')

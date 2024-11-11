@@ -140,3 +140,10 @@ class MailMail(models.Model):
                 
         # except Exception as e:
         #     _logger.error("Error in search_and_cancel_by_body: %s", str(e))
+        
+    @api.model
+    def reload_page(self):
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
