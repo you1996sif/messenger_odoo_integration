@@ -42,6 +42,8 @@ class FacebookConversation(models.Model):
     def create(self, vals):
         if 'user_conversation_id' in vals and 'partner_id' not in vals:
             conversation = self.env['facebook.user.conversation'].browse(vals['user_conversation_id'])
+            _logger.info(" conversation.reload_page()")
+            conversation.reload_page()
             vals['partner_id'] = conversation.partner_id.id
         return super(FacebookConversation, self).create(vals)
     
