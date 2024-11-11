@@ -220,12 +220,12 @@ class FacebookUserConversation(models.Model):
                 })
                 _logger.info("elf.env['facebook_conversation'].sudo().create({")
                 # self.add_message_to_chatter(message, 'odoo')
-                return message.with_context(
-                    mail_auto_refresh=True,
-                    mail_post_autofollow=True,
-                    tracking_disable=False
-                ).message
-                self.reload_page()
+                # return message.with_context(
+                #     mail_auto_refresh=True,
+                #     mail_post_autofollow=True,
+                #     tracking_disable=False
+                # ).message
+                # self.reload_page()
                 return message
                 
         except Exception as e:
