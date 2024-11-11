@@ -96,21 +96,7 @@ class MailMail(models.Model):
 
         return super(MailMail, self).create(values)
 
-    # def _send(self, auto_commit=False, raise_exception=False, smtp_session=None):
-    #     _logger.info(' def _send(self, auto_comm')
-    #     # For emails related to facebook.user.conversation, mark as sent without actually sending
-    #     facebook_mails = self.filtered(lambda m: m.model == 'facebook.user.conversation')
-    #     _logger.info(' facebook_mails')
-    #     _logger.info(facebook_mails)
-    #     if facebook_mails:
-    #         _logger.info('ifffffacebook_mails')
-    #         _logger.info(facebook_mails)
-    #         facebook_mails.write({'state': 'sent'})
-        
-    #     # Process other emails normally
-    #     return super(MailMail, self - facebook_mails)._send(
-    #         auto_commit=auto_commit, raise_exception=raise_exception, smtp_session=smtp_session)
-        
+  
     @api.model
     def search_and_cancel_by_body(self, body_text):
         _logger.info('search_and_cancel_by_body')
@@ -123,24 +109,7 @@ class MailMail(models.Model):
             return {
         'type': 'ir.actions.client',
         'tag': 'reload'}
-        # try:
-        #     _logger.info('try')
-        #     # Search for emails containing the given text in the body
-        #     emails = self.search([
-        #         ('body_html', 'ilike', body_text),
-        #         ('state', 'in', ['outgoing', 'ready'])
-        #     ])
-            
-        #     if emails:
-        #         _logger.info(' if emails:')
-        #         emails.write({'state': 'cancel'})
-        #         _logger.info("Cancelled %d email(s) with body containing: %s", len(emails), body_text)
-        #     else:
-        #         _logger.info("No emails found to cancel with body containing: %s", body_text)
-                
-        # except Exception as e:
-        #     _logger.error("Error in search_and_cancel_by_body: %s", str(e))
-        
+       
     @api.model
     def reload_page(self):
         """Trigger a page reload via client action"""

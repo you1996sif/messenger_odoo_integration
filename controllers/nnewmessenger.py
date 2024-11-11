@@ -96,7 +96,8 @@ class FacebookWebhookController(http.Controller):
 
             _logger.info('returning 200:')
             # MailMail.reload_page()
-            request.env['mail.mail'].sudo().reload_page()
+            # request.env['mail.mail'].sudo().reload_page()
+            
             return Response("OK", status=200)
         
         except Exception as e:

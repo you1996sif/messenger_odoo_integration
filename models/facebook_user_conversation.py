@@ -172,6 +172,13 @@ class FacebookUserConversation(models.Model):
             })
         else:
             conversation.write({'last_message_date': fields.Datetime.now()})
+            
+        followers = self.message_follower_ids.filtered(
+            lambda f: f.partner_id == self.env.user.partner_id
+        )
+        if followers:
+            followers.sudo().unlink()
+        _logger.info("if followers:")
         return conversation
 
     def action_archive(self):
