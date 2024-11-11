@@ -117,20 +117,24 @@ class MailMail(models.Model):
         if not body_text:
             _logger.info('if not body_text')
             return
-        try:
-            _logger.info('try')
-            # Search for emails containing the given text in the body
-            emails = self.search([
-                ('body_html', 'ilike', body_text),
-                ('state', 'in', ['outgoing', 'ready'])
-            ])
+        else:
+            return {
+        'type': 'ir.actions.client',
+        'tag': 'reload'}
+        # try:
+        #     _logger.info('try')
+        #     # Search for emails containing the given text in the body
+        #     emails = self.search([
+        #         ('body_html', 'ilike', body_text),
+        #         ('state', 'in', ['outgoing', 'ready'])
+        #     ])
             
-            if emails:
-                _logger.info(' if emails:')
-                emails.write({'state': 'cancel'})
-                _logger.info("Cancelled %d email(s) with body containing: %s", len(emails), body_text)
-            else:
-                _logger.info("No emails found to cancel with body containing: %s", body_text)
+        #     if emails:
+        #         _logger.info(' if emails:')
+        #         emails.write({'state': 'cancel'})
+        #         _logger.info("Cancelled %d email(s) with body containing: %s", len(emails), body_text)
+        #     else:
+        #         _logger.info("No emails found to cancel with body containing: %s", body_text)
                 
-        except Exception as e:
-            _logger.error("Error in search_and_cancel_by_body: %s", str(e))
+        # except Exception as e:
+        #     _logger.error("Error in search_and_cancel_by_body: %s", str(e))
