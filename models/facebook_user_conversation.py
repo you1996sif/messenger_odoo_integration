@@ -219,16 +219,24 @@ class FacebookUserConversation(models.Model):
                     'message_type': 'comment'
                 })
                 _logger.info("elf.env['facebook_conversation'].sudo().create({")
-                self.add_message_to_chatter(message, 'odoo')
+                # self.add_message_to_chatter(message, 'odoo')
                 
                 
-                return message
+                return {
+                'type': 'ir.actions.client',
+                'tag': 'reload',
+                'message': message,  # Include the message in the return dict
+            }
                 
         except Exception as e:
             _logger.error('Error sending message to Facebook: %s', str(e))
             raise UserError(_("Failed to send message: %s") % str(e))
             
-        return message
+        return {
+                'type': 'ir.actions.client',
+                'tag': 'reload',
+                'message': message,  # Include the message in the return dict
+            }
     
     # def message_post(self, **kwargs):
     #     _logger.info(f"message_post called with context: {self.env.context}")
@@ -348,6 +356,7 @@ class FacebookUserConversation(models.Model):
                     ('message_id', '=', message_id)
                 ], limit=1)
                 if existing_message:
+                    
                     _logger.info('Message already exists: %s', message_id)
                     return
 
